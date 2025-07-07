@@ -34,12 +34,13 @@ Do an `npm install --save-dev`  of each of them, to make sure you have them.  Yo
 Create a `test` directory inside of the `node-homework` folder.  Then update your `package.json` so that the scripts stanza includes:
 
 ```json
-    "test": "jest --verbose --roots ./test",
+    "test": "NODE_ENV=test jest --testPathPatterns=test/ --verbose --maxWorkers=1",
 ```
+**Note: This way of setting the NODE_ENV environment variable works on Windows Native, but only if you are running the test under Git Bash.  If you are developing in Windows Native, you should use Git Bash for all development, and you should configure VSCode so that Git Bash is the default terminal program.**
 
 This configuration runs the tests you create, but not the TDD provided with the course.  You can now do `npm run test` but it won't do anything, of course, because you don't have any tests.
 
-Within the tests direcory, create a file called `validation.test.js`.  All of your test files should end with `.test.js` so that `jest` will find them.  This test file is for testing your validation schema. Accordingly, it should start:
+Within the tests directory, create a file called `validation.test.js`.  All of your test files should end with `.test.js` so that `jest` will find them.  This test file is for testing your validation schema. Accordingly, it should start:
 
 ```js
 const { userSchema } = require("../validation/userSchema");
@@ -81,48 +82,43 @@ We want to test whether the user object validation will accept a trivial passwor
 Create a stanza as follows:
 
 ```js
-describe("user object validation tests", ()=>{
-    it("1: doesn't permit a trivial password", ()=>{
-        const {error, value} = userSchema.validate(
-            { name: "Bob",
-              email: "bob@sample.com",
-              password: "password",
-            }.
-            { abortEarly: false }
-        )
-    })
-})
+describe("user object validation tests", () => {
+  it("1. doesn't permit a trivial password", () => {
+    const { error } = userSchema.validate(
+      { name: "Bob", email: "bob@sample.com", password: "password" },
+      { abortEarly: false },
+    );
+    // expect() statement needed to
+  });
+});
 ```
 
-If the schema is working right, this should return an error, and the error should flag the fact that the password is inadequate.  The `error` returned should have a array of `detail` objects , each having a `context`, and there should be one with a key of `password`.  So we can modify the above code to read:
+If the schema is working right, the test should return an error, and the error should flag the fact that the password is inadequate.  The `error` returned should have a array of `detail` objects , each having a `context`, and there should be one with a key of `password`.  So we can modify the above code to read:
 
 ```js
-describe("user object validation tests", ()=>{
-    it("1: doesn't permit a trivial password", ()=>{
-        const {error, value} = userSchema.validate(
-            { name: "Bob",
-              email: "bob@sample.com",
-              password: "password",
-            }.
-            { abortEarly: false }
-        )
-        expect(error.details.find((detail) => detail.context.key == "password"),
-             ).toBeDefined();
-    })
-})
+describe("user object validation tests", () => {
+  it("1. doesn't permit a trivial password", () => {
+    const { error } = userSchema.validate(
+      { name: "Bob", email: "bob@sample.com", password: "password" },
+      { abortEarly: false },
+    );
+    expect(
+      error.details.find((detail) => detail.context.key == "password"),
+    ).toBeDefined();
+  });
+});
 ```
-
-Here, the `toBeDefined()` is a matcher provided with jest.  You'll need to know the avaiable matchers to use.  They are described at this link: [https://jestjs.io/docs/using-matchers](https://jestjs.io/docs/using-matchers).  Two possible problems could occur.  First, the error might be returned, but without a detail.context with a key of password.  Then the matcher would flag a test failure.  The rest of the test within the `it()` block would proceed, in case there are other problems to find.  The other possible error is that the validation call found no problems with the object, and returned a value instead of an error.  In this case, the reference to `error.details` would fail, because `error` would be null.  So an exception would occur, all processing within this `it()` block would stop.  In either case, we get the result we want: a test failure is reported.  If there are other `it()` blocks within the `describe()` or elsewhere in the file, they'll still run.
+This test will report a failure in two cases.  First, the error might be returned, but without a detail.context with a key of password.  In this case, the matcher flags a test failure.  The second failure case is that the validation call found no problems with the object, and returned a value instead of an error.  In this case, the reference to `error.details` throws an error, because `error` would be null.  In either case, no further statements within the it() block run, and we get the result we need: a test failure is reported.  If there are other `it()` blocks within the `describe()` or elsewhere in the file, they'll still run in either case.
 
 ### **Style Requirements**
 
 In creating your tests, follow these guidelines.
 
-1. Do only one `expect()` within each `it()` block.  Note that you could have objects that are used within multiple `it()` blocks, provided that they are declared in a way that keeps them in scope, perhaps within the `describe()`.
+1. Do only one `expect()` within each `it()` block.  Note that you could have objects that are used within multiple `it()` blocks, provided that they are declared in a way that keeps them in scope.  Test cases are not always written this way, but if you have multiple expect() statements in one test, the test report may not show all the reasons for the failure.
 
-2. Number the `it()` statement with the number of the test case, followed by a colon.  The test case spec will give the numbers you should use.
+2. Number the `it()` statement with the number of the test case, followed by a period.  The test case spec will give the numbers you should use.
 
-These requirements are just to allow the TDD to work, so that you and your assignment reviewers can know if your work is correct.
+These requirements are to allow the TDD to work, so that you and your assignment reviewers can know if your work is correct.
 
 Now, run `npm run test`.  The test should succeed.
 
@@ -140,11 +136,11 @@ Create the following additional tests within the first describe() block, each in
 
 6. The name must be valid (3 to 30 characters).
 
+7. If validation is performed on a valid user object, error comes back falsy.
+
 Create another describe stanza for taskSchema, with the following tests:
 
-7. The task schema requires a title.
-
-8. The title must be valid.
+8. The task schema requires a title.
 
 9. If an `isCompleted` value is specified, it must be valid.
 
@@ -154,9 +150,9 @@ Create another describe stanza for taskSchema, with the following tests:
 
 Create another describe() stanza for the patchTaskSchema.
 
-12. Test that the title is not required in this case.
+12. The patchTaskSchema does not require a title.
 
-13. Test that if no value is provided for `isCompleted`, that this remains undefined in the returned value.
+13. If no value is provided for `isCompleted` this remains undefined in the returned value.
 
 Do another `npm run test`.  All tests should succeed.  If a test fails, the error might be in the code you are testing, and it might be in the test.
 
@@ -172,11 +168,12 @@ Next, you need to test `controllers/taskController.js`.  When you test a control
 
 2. You set the database to a known state before testing.  We are just going to delete everything, but it is more common to populate it with known data.
 
+3. You consider **concurrency issues.**  By default, several jest test files may be run concurrently.  If each of them changes the test database, there will be conflicts and flaky test failures.  In your configuration, this won't happen, because you are starting the test with `maxWorkers=1`, so there is no concurrency.  However, this slows the test process, so it is not a good idea if there are lots of tests.  To avoid concurrency issues, you ensure that each test file only reads or writes to a subset of the database.  For this project, you could use different sets of user and task entries for each test file.
+
 Within your test folder, create a file called `taskController.test.js`.  This should start as follows:
 
 ```js
-require("dotenv").config({path: "../.env"});
-process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+require("dotenv").config();
 const { PrismaClient } = require("@prisma/client");
 const { createUser } = require("../services/userService");
 const httpMocks = require("node-mocks-http");
@@ -187,12 +184,20 @@ const {
   update,
   deleteTask,
 } = require("../controllers/taskController");
-const prisma = new PrismaClient();
+
+// a few useful globals
 let user1 = null;
 let user2 = null;
+let saveRes = null;
+let saveData = null;
+let saveTaskId = null;
 ```
 
-The call to `dotenv` is needed to get the database URLs.  But **before** you load the Prisma client, and **before** you load any code that loads the Prisma client, you have to set the environmnet variable to point to the test database.  You are going to use the `createUser()` function from your user service.  You want to use this to create the user records you need in the database, because if you call the Prisma client directly, the password would not be hashed.
+The call to `dotenv` is needed to get the database URLs.  But **before** you load the Prisma client, and **before** you load any code that loads the Prisma client, you have to set the environmnet variable to point to the test database.  
+
+There is a confusing point about the dotenv `config()` call.  The `.env` file is in the root of the project, but this file is not.  The dotenv package resolves the path using the current working directory, not the location of the current file.  You run jest from the root of the project, so that is always the current working directory.
+
+You use the `createUser()` function from your user service.  You use this to create the user records you need in the database, because if you call the Prisma client directly, the password is not hashed.
 
 Jest provides a number of useful hooks:
 
@@ -201,11 +206,12 @@ Jest provides a number of useful hooks:
 - afterAll
 - afterEach
 
-In this case, the `beforeAll()` hook will be used to empty the database and to create the user records needed.  So the next part of the test file looks like this:
+You could specify these outside any `describe()` stanza, in which case they apply to the top level stanzas.  You could also specify these inside a `describe()` stanza, in which case they apply to the stanzas inside that `describe()` block. In this case, the `beforeAll()` hook will be used to empty the database and to create the user records needed.  The next part of the test file looks like this:
 
 ```js
 beforeAll(async () => {
   // clear database
+  const prisma = new PrismaClient();
   await prisma.Task.deleteMany(); // delete all tasks
   await prisma.User.deleteMany(); // delete all users
   user1 = await createUser({
@@ -221,7 +227,7 @@ beforeAll(async () => {
 });
 ```
 
-Clearly you would not want to do this step unless you are pointing to the test database.  When you pass a function to `beforeAll()` or `it()` or other jest functions, you can declare it as async so that you can use await, and so that jest will wait for async operations to complete.
+Clearly you would not want to do this step unless you are pointing to the test database.  When you pass a function to `beforeAll()` or `it()` or other jest functions, you can declare it as async so that you can use await.
 
 Why do we need the user records? Each task record has a foreign key, the userId.  If this is not provided or if it doesn't correspond to a real user record, you get a constraint violation from the database.
 
@@ -232,39 +238,37 @@ We want to call the task controller `create` method.  That method takes two para
 Our first test looks like this:
 
 ```js
-
 describe("testing task creation", () => {
-    it("14: create a task", async () => {
-        req = httpMocks.createRequest({
-            method: "POST",
-            body: { title: "first task" },
-        });
-        let res = httpMocks.createResponse();
-        await create(req, res);
-        expect(res.statusCode).toBe(201);
+  it("14. create a task", async () => {
+    const req = httpMocks.createRequest({
+      method: "POST",
+      body: { title: "first task" },
     });
+    saveRes = httpMocks.createResponse();
+    await create(req, saveRes);
+    expect(saveRes.statusCode).toBe(201);
+  });
 })
 ```
 
-OK, all looks good.  This is a valid task object for creation.  So, run the test.  Whoa! That failed.  Have a look at the log to figure out why.  What do you see?  Ah, of course, `req.user` is not set!  In the app, task creation is behind the `auth` middleware, and that is what sets up req.user.  So, we still have a valid test, but we need to rename it and catch the error, as follows:
+OK, all looks good.  This is a valid task object for creation.  So, run the test.  Whoa! That failed.  Have a look at the log to figure out why.  What do you see?  Ah, of course, `req.user` is not set!  In the app, task creation is behind the `auth` middleware, and that is what sets up req.user.  We aren't going through that route when the controller is invoked directly.  So, we still have a valid test, but we need to rename it and catch the error, as follows:
 
 ```js
-    it("14: cant create a task without userId", async () => {
-        expect.assertions(1)
-        req = httpMocks.createRequest({
-            method: "POST",
-            body: { title: "first task" },
-        });
-        let res = httpMocks.createResponse();
-        try {
-            await create(req, res);
-        } catch (e) {
-            expect(e.name).toBe("TypeError");
-        }
+   it("14. cant create a task without a user id", async () => {
+    const req = httpMocks.createRequest({
+      method: "POST",
+      body: { title: "first task" },
     });
+    saveRes = httpMocks.createResponse();
+    try {
+      await create(req, saveRes);
+    } catch (e) {
+      expect(e.name).toBe("TypeError");
+    }
+  });
 ```
 
-Now run the test again.  Ah, that's better! But, the test case still isn't right.  If the error is not thrown, the test case would not identify the problem.  You definitely want the error to be thrown, and the test should make sure that it is.  This is done with the `expect.assertions()` method.  In this case, we expect that one assertion, one expect() statement, will be satisfied, and we want the test to fail if that doesn't happen.
+Now run the test again.  Ah, that's better! But, the test case still isn't right.  If the error is not thrown, the test case would not identify the problem.  You definitely want the error to be thrown, and the test should make sure that it is.  This is done with the `expect.assertions(1)` method.  In this case, we expect that one assertion, meaning one expect() statement, will be satisfied, and we want the test to fail if that doesn't happen.  So, add that statement.  It should be before your try block.
 
 ## **More Tests of the Tasks Controller**
 
@@ -272,95 +276,88 @@ Now you know that for the create() call to succeed, you need to have `req.user =
 
 Create more controller tests:
 
-15. Test that you can't create a task with a bogus user id.
+15. You can't create a task with a bogus user id.
 
-16. Test that if you have a valid user id, create() succeeds (res.status should be 201).
+In this case, you trigger a database constraint violation, because the foreign key is invalid.  The error thrown has a name of `PrismaClientKnownRequestError`.
 
-17. Test that the object returned from the create() call has the expected title.  To do this, you need to do `const data = res._getJSONData()`.
+16. If you have a valid user id, create() succeeds (res.statusCode should be 201).
 
-18. Test that the object has the right value for `isCompleted`.
+The res object you create for test 16 should be saved in saveRes, so that you can do subsequent tests on what is stored.
 
-19. Test that the returned object does not have any value for userId (`.not.isDefined()`)
+17. The object returned from the create() call has the expected title.  
 
-Note: if you declare a res that is in the describe scope, test 16 could make the create() call, and tests 17, 18, and 19 could just check to see if the returned data is correct.
+To do this, you need to do `saveData = saveRes._getJSONData()`.  Then you can test what saveData contains.
 
-Create a new describe stanza called "test getting created tasks".
+18. The object has the right value for `isCompleted`.
 
-20. Test that you can't get a list of tasks without a user id.
+19. The object does not have any value for userId.
 
-21. Test that if you use user1's id, the call succeeds.
+Save the id value from the object in saveTaskId.  You'll need it below.
 
-22. Test that the returned JSON is an array of length 1.
+**Note: You should not use the same res object for multiple controller calls, because there will be unwanted state preserved inside of the res.  Create a new one when you need to call the controller again.**
 
-23. Test that the title in the first array object is as expected.
+Create a new describe stanza called "test getting created tasks" and test the following.
 
-24. Test that the first array object does not contain a userId.
+20. You can't get a list of tasks without a user id.
 
-25. Test that if you use the userId from user2, you get a 404.  (This is a security test for access control!  You do not want Alice to access Bob's data!)
+21. If you use user1's id, the call returns a 200 status.
 
-26. Test that you can retrieve the first array object using the `show()` method of the controller.
+22. The returned JSON array has length 1.
 
-27. Test that user2 can't retrieve this object. (Why test this? We don't use this operation in the app -- but we have to test it, as it could be a back door.)
+23. The title in the first array object is as expected.
 
-Now create another stanza for testing the update and delete of tasks.
+24. The first array object does not contain a userId.
 
-28. Test that user1 can set the task to `isCompleted: true`.
+25. If you get the list of tasks using the userId from user2, you get a 404.  
 
-29. Test that user2 can't do this.
+(This is a security test for access control!  You do not want Alice to access Bob's data!)
 
-30. Test that user2 can't delete this task.
+26. You can retrieve the created object using show().
 
-31. Test that user1 can delete this task.
+Hint: You have to set req.params.  You want req.params.id to be a string representation of saveTaskId: req.params = { id: saveTaskId.toString() }
 
-32. Test that retrieving user1's tasks now returns a 404.
+27. User2 can't retrieve this task entry. 
 
-You have created quite a few tests so far, but none of them are very long.  A complicated project will have a test suite of thousands of test cases.  This example is to show you all the things you need to test in a typical test suite.  For the balance of the assignment, we won't write as many tests.
+(Why test this? We don't use this operation in the app -- but we have to test it, as it could be a back door.)
+
+Create another stanza for testing the update and delete of tasks.
+
+28. User1 can set the task corresponding to saveTaskId to `isCompleted: true`.
+
+29. User2 can't do this.
+
+30. User2 can't delete this task.
+
+31. User1 can delete this task.
+
+32. Retrieving user1's tasks now returns a 404.
+
+Lots of tests, eh?  A complicated project will often have a test suite of thousands of test cases.  This example is to show you all the things you need to test in a typical test suite.
 
 Run the tests, and make sure all of them pass.
 
 ## **Tests of the User Controller**
 
+Because of the length of this assignment, the user.controller.test.js file is **optional**.  But, be sure you understand the following.  Pay particular attention to the special async processing needed to test the login() function.
+
+We want to test logon.  But, we have a couple of problems.  The login method sets a cookie.  If that cookie is not set, things aren't working, so we have to test this.  The first problem is that a res object returned by `httpMocks.createResponse()` doesn't keep track of cookies.  The second problem is that, within the login method is a call to passport, with a callback inside.  The res.json() call only happens within that callback.  So, if your test code does an `await login(req,res)`, that will return before the res object is updated, and the test will fail.  You will likely get an error message from jest that you are not handling asynchronous operations correctly.  Now, one could ask the author of the login method to wrapper the call to passport within a promise.  But, it's considered poor form to ask for product code changes just to enable a test, at least if those aren't really necessary.
+
+So, we create an enhanced version of the mock res object.  This one keeps track of 'Set-Cookie' operations, and it also provides a means of waiting on a promise that will resolve when the `res.json()` call occurs.  See the MockRequestWithCookies() function below.
+
 Create another file in the test directory called `user.controller.test.js`.  This should start:
 
 ```js
-require("dotenv").config({path: "../.env"});
-process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+require("dotenv").config();
 const { PrismaClient } = require("@prisma/client");
 const { createUser } = require("../services/userService");
 const httpMocks = require("node-mocks-http");
-const {
-  index,
-  show,
-  create,
-  update,
-  deleteTask,
-} = require("../controllers/taskController");
-const prisma = new PrismaClient();
-let user1 = null;
-let user2 = null;
+const { login, register, logoff } = require("../controllers/userController");
+require("../passport/passport");
 
-beforeAll(async () => {
-  // clear database
-  await prisma.Task.deleteMany(); // delete all tasks
-  await prisma.User.deleteMany(); // delete all users
-  user1 = await createUser({
-    email: "bob@sample.com",
-    password: "Pa$$word20",
-    name: "Bob",
-  });
-  user2 = await createUser({
-    email: "alice@sample.com",
-    password: "Pa$$word20",
-    name: "Alice",
-  });
-});
-```
+// a few useful globals
+let saveRes = null;
+let saveData = null;
 
-We want to test logon.  But, we have a couple of problems.  The login method sets a cookie.  If that cookie is not set, things aren't working.  A res object returned by `httpMocks.createResponse()` doesn't keep track of cookies.  The second problem is that, within the login method is a call to passport, with a callback inside.  The res.json() call only happens within the callback.  So, if your test code does an `await login(req,res)`, that will return before the res object is updated, and the test will fail.  You will likely get an error message from jest that you are not handling asynchronous operations correctly.  Now, one could ask the author of the login method to wrapper the call to passport within a promise.  But, it's considered poor form to ask for product code changes just to enable a test, at least if those aren't really necessary.
-
-So, we create an enhanced version of the mock res object.  This one keeps track of 'Set-Cookie' operations, and it also provides a means of waiting on a promise that will resolve when the `res.json()` call occurs.  Here's that code:
-
-```js
 const cookie = require("cookie");
 function MockResponseWithCookies() {
   const res = httpMocks.createResponse();
@@ -375,78 +372,88 @@ function MockResponseWithCookies() {
   };
 
   res.jsonPromise = () => {
-    return new Promise(resolve => {
-      res.oldJsonMethod = res.json
+    return new Promise((resolve) => {
+      res.oldJsonMethod = res.json;
       res.json = (...args) => {
-        res.oldJsonMethod(...args)
-        res.json = res.oldJsonMethod
-        resolve()
-      }
-    })
-  }
+        res.oldJsonMethod(...args);
+        res.json = res.oldJsonMethod;
+        resolve();
+      };
+    });
+  };
 
   return res;
 }
+
+beforeAll(async () => {
+  // clear database
+  const prisma = new PrismaClient();
+  await prisma.Task.deleteMany(); // delete all tasks
+  await prisma.User.deleteMany(); // delete all users
+  await createUser({
+    email: "bob@sample.com",
+    password: "Pa$$word20",
+    name: "Bob",
+  });
+});
+let jwtCookie;
 ```
 
 We are adding a `cookie()` function to keep track of the "Set-Cookie" operations, performing appropriate serialization and storing them in an array.  We are also putting a promise wrapper around the `res.json()` function so that we know when it has been called.  We only need that one for `login()`.
 
-Ok, so now one can create the logon test:
+Now we can create the logon test:
 
 ```js
-describe("testing login, register, and logoff", ()=>{
-    let res=null; // we declare it here, so we can use it in subsequent tests
-    it("33: The user is logged on", async()=>{
-        const req = httpMocks.createRequest({
-                method: "POST",
-            body: { email: "bob@sample.com", name: "Bob", password: "Pa$$word20" },
-         });
-        res = MockResponseWithCookies()
-        const jsonPromise = res.jsonPromise()
-        login(req,res) // no need for await here
-        await jsonPromise // because we do it here, after everything is done
-        expect(res.status).toBe(200) // success!
-    })
+describe("testing login, register, and logoff", () => {
+  it("33. The user can be logged on", async () => {
+    const req = httpMocks.createRequest({
+      method: "POST",
+      body: { email: "bob@sample.com", password: "Pa$$word20" },
+    });
+    saveRes = MockResponseWithCookies();
+    const jsonPromise = saveRes.jsonPromise();
+    login(req, saveRes); // no need for await here
+    await jsonPromise; // because we do it here, to return after the res.json().
+    expect(saveRes.statusCode).toBe(200); // success!
+  });
 })
 ```
 
-It is convenient to declare `res` outside of the individual test, so that one can write multiple tests that inspect its contents.  But! Do not use the same res for multiple controller calls.  There will be garbage state preserved.  Create a new one when you do a subsequent controller call.
-
-One can now add some subsequent tests, without sending another request.  These tests just check the data and cookies.  The response header needed for the test is obtained via:
+One can now add some subsequent tests, without sending another request.  These tests just check the data and cookies.  The response header set by the request is obtained via:
 
 ```js
-const setCookieArray = res.get("Set-Cookie")
+const setCookieArray = saveRes.get("Set-Cookie")
 ```
 
 Add the following tests:  
 
-34. Verify that the setCookieArray has a length of 1.
+35. A string in that array starts with "jwt=".
 
-35. Verify that the first string in that array starts with "jwt=".
+36. That string contains "HttpOnly;".  (This is a security test!)
 
-36. Verify that that string contains "HttpOnly;".  (This is a security test!)
+37. The returned data has the expected name.
 
-37. Verify that the returned data contains a name.
+38. The returned data contains a csrfToken.
 
-38. Verify that the returned data contains a csrfToken.
+39. A logon attempt with a bad password returns a 401.
 
-39. Verify that a logon attempt with a bad password returns a 401.
+40. You can't register with an email address that is already registered.
 
-40. Test that one can't register with an email address that is already registered.
+41. You can register an additional user.
 
-41. Test that one can register an additional user.
+42. You can logon as that new user.
 
-42. Test that one can logon as that new user.
+43. You can now logoff.
 
-43. Test that one can logoff.
+45. The logoff clears the cookie.
 
-45. Test that the logoff has cleared the cookie.  The cookie string should contain "Jan 1970".  Cookies are cleared by setting the expiration date to some time in the past.
+For the last test above, when you retrieve the setCookieArray from saveRes, it should contain a string starting with "jwt=", and that string should contain "Jan 1970".  Cookies are cleared by setting the expiration date to some time in the past.
 
-Verify that "npm run test" runs all these tests successfully.
+If you have done this optional part of the assignment, verify that "npm run test" runs all these tests successfully.
 
 ## **Testing Actual Network Operations**
 
-One could write similar tests for the routers and the middleware, but at some point, you need to link these, to see if they all work together. For this, we use supertest.  Create another file in the test directory called `user.function.test.js`.  This is to call the user functions.  You will need to change `app.js` as follows:
+One could write similar tests for the routers and the middleware, and in a real Express project, you'd do exactly that.  At some point, you need to link these, to see if they all work together. For this, we use supertest.  Create another file in the test directory called `user.function.test.js`.  This is to call the user functions.  You will need to change `app.js` as follows:
 
 ```js
 let server = null;
@@ -464,41 +471,52 @@ module.exports = { app, server };
 The new test file should start out as follows:
 
 ```js
-require("dotenv").config({path: "../.env"});
-const request = require("supertest")
+require("dotenv").config();
+const request = require("supertest");
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
-const {app, server} = require("../app")
-const agent = request.agent(app)
 const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+let agent;
+let saveRes;
+const { app, server } = require("../app");
 
 beforeAll(async () => {
-  // clear databaseS
+  // clear database
+  const prisma = new PrismaClient();
   await prisma.Task.deleteMany(); // delete all tasks
   await prisma.User.deleteMany(); // delete all users
+  agent = request.agent(app);
 });
 
 afterAll(async () => {
-    server.close()
-}
+  await new Promise((resolve, reject) => {
+    server.close((err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+});
 ```
 
-Let's explain this code.  As usual, we load the environment variables we need, and make sure we are pointing to the test database from the start.  We are using cookie based security, so we have to keep track of the cookies.  Fortunately, the supertest agent does that for us.  We configure the agent with the app so that the actual operations can be sent to the app.  As usual, we clean the database.  We want to stop the server at the end of the test, and we do that in the afterAll() hook.
+Let's explain this code.  As usual, we load the environment variables we need, and make sure we are pointing to the test database from the start.  We are using cookie based security, so we have to keep track of the cookies.  Fortunately, the supertest agent does that for us.  We configure the agent with the app so that the actual operations can be sent to the app.  As usual, we clean the database.
+
+**It is very important to stop the server at the end of the test.**  If this doesn't occur, your app could be left as a zombie process, and that's a mess.  That's why the server value is exported from your app.  The call to `server.close()` is asynchronous.  It doesn't return a promise, but it does provide a callback, so we have wrapped the call in a promise, and there is an await for that promise to make sure it completes.
 
 Now for the first test of this type:
 
 ```js
 describe("register a user ", () => {
   let res = null // we'll declare this out here, so that we can reference it in several tests
-  it("46: it creates the user entry", async () => {
+  it("46. it creates the user entry", async () => {
+describe("register a user ", () => {
+  it("46. it creates the user entry", async () => {
     const newUser = {
       name: "John Deere",
       email: "jdeere@example.com",
       password: "Pa$$word20",
     };
-    const res = await agent.post("/user/register", newUser).send(newUser);
-    expect(res.status).toBe(201);
-  })
+    saveRes = await agent.post("/user/register").send(newUser);
+    expect(saveRes.status).toBe(201);
+  });
 })
 ```
 
@@ -515,6 +533,12 @@ it('should access a restricted page after sign-in', function (done) {
 
 But, that's old style: not recommended!
 
+After the await for the agent completes, you get a res object.  This differs a little from the mock res for the controller tests.  You have:
+
+- res.body: the body of the response.
+- res.status: the status code returned.
+- res.headers: An object with headers, if any.  You could get res.headers["set-cookie"], which may or may not be defined.  If it is defined, it is an array of the set-cookie strings.
+
 Run this test to make sure it works.  You can run this individual test as follows: 
 
 ```bash
@@ -523,15 +547,23 @@ npx jest test/user.function.test.js
 
 Then, add the following additional tests:
 
-47. Test that the returned object includes the expected name.  Note: For supertest, you can get the body of the request with just `res.body`.
+47. Registration returns an object with the expected name.  In this case, that's in saveRes.body.
 
 48. Test that the returned object includes a csrfToken.
 
-49. Test that one can logon as the newly registered user.  Note: You don't have to worry about the asynchronous call to passport here.  That will have completed as soon as the call to the agent returns.
+49. You can logon as the newly registered user.
 
-50. Test that one can logoff.  Hint: The logoff route is protected.  What do you need to put in the request header?
+Note: You don't have to worry about the asynchronous call to passport here.  That will have completed as soon as the call to the agent returns.
 
-Then verify that all your tests run without error.
+50. You can logoff.
+
+Hint: The logoff route is protected.  What do you need to put in the request header?  Where can you get the needed value? Why didn't you have to do this for the controller test?
+
+Then verify that all your tests run without error.  IF you want to run just this test, you can do:
+
+```bash
+NODE_ENV=test npx jest test/user.function.test.js
+```
 
 ## **On Making Tests Comprehensive**
 
@@ -540,22 +572,14 @@ As you go further up the stack, your tests don't have to be quite as granular.  
 You can check code coverage as follows:
 
 ```bash
-npx jest --roots ./test --coverage
+NODE_ENV=test npx jest --testPathPatterns=test/ --verbose --maxWorkers=1 --coverage
 ```
 
 How far did you get towards 100%?
 
 If your code is robust, it will handle lots of unlikely errors in data or requests or race conditions or the like.  However, some of these conditions may be hard to duplicate in test -- so a test suite with 100% code coverage is rarely achieved.
 
-Whenever software is provided to a customer or end user, there is an implicit contract:
-
-- This software is robust and does not fail under normal use, or even under hostile attack.
-- The results returned by this software are correct.
-- This software does not lose the data it stores.
-- This software is secure, and does not divulge sensitive information.
-- This software won't be broken as it is maintained or enhanced.
-
-The purpose of testing is to meet the terms of the contract.
+Even when you do have comprehensive code coverage, the tests may be, and this case definitely are, inadequate to test every failure mode.
 
 ### **Check For Understanding**
 
