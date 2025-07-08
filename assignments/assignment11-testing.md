@@ -156,6 +156,16 @@ Create another describe() stanza for the patchTaskSchema.
 
 Do another `npm run test`.  All tests should succeed.  If a test fails, the error might be in the code you are testing, and it might be in the test.
 
+### **Testing the Tests**
+
+Some automated tests of your tests are provided.  You can run these now, with the following command:
+
+```bash
+npm run lesson11TDD
+```
+
+When you run the tests of the tests, it causes "mocks" of the application code to be run.  The mocks implement all the same function, but with some intentionally introduced bugs.  Your tests should identify these bugs.  This is in no way a complete test of your tests.
+
 ### **Check for Understanding**
 
 What other validation errors might occur that wouldn't be caught by these tests?
@@ -559,11 +569,13 @@ Note: You don't have to worry about the asynchronous call to passport here.  Tha
 
 Hint: The logoff route is protected.  What do you need to put in the request header?  Where can you get the needed value? Why didn't you have to do this for the controller test?
 
-Then verify that all your tests run without error.  IF you want to run just this test, you can do:
+Then verify that all your tests run without error.  If you want to run just this test, you can do:
 
 ```bash
 NODE_ENV=test npx jest test/user.function.test.js
 ```
+
+Also, run the TDD (test of the tests) command, if you haven't recently, to see if it identifies any problems with your tests.
 
 ## **On Making Tests Comprehensive**
 
