@@ -1,8 +1,8 @@
-# **Assignment 11: Automated Testing**
+# **Assignment 9: Automated Testing**
 
 ## **Assignment Instructions**
 
-This assignment is to be added to node-homework.  Be sure to create an assignment11 branch for your work, and to create it from your assignment10 branch, so that you have access to your previous work.  This assignment requires the following packages, most of which have already been installed:
+This assignment is to be added to node-homework.  Be sure to create an assignment9 branch for your work, and to create it from your assignment10 branch, so that you have access to your previous work.  This assignment requires the following packages, most of which have already been installed:
 
 - jest
 - supertest
@@ -632,7 +632,7 @@ To be done.  Not sure if I'll really do this.
 
 - Log on to your GitHub account.
 - Open your `node-homework` repository.
-- Select your `assignment11` branch. It should be one or several commits ahead of your main branch.
+- Select your `assignment9` branch. It should be one or several commits ahead of your main branch.
 - Create a pull request.
 
 #### **3️⃣ Submit Your GitHub Link**

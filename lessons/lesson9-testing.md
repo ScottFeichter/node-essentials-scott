@@ -1,4 +1,4 @@
-# **Lesson 11 — Automated Testing**
+# **Lesson 9 — Automated Testing**
 
 ## **Lesson Overview**
 
@@ -11,7 +11,7 @@
 3. Concepts in Automated Software Testing.
 4. The `jest` and `supertest` Packages.
 
-## **11.1 Introduction to Automated Software Testing**
+## **9.1 Introduction to Automated Software Testing**
 
 Whenever software is provided to a customer or end user, there is an implicit contract:
 
@@ -25,7 +25,7 @@ The purpose of testing is to meet the terms of the contract.
 
 Until this point in the course, you have been doing two kinds of testing.  Automated testing is provided to you in your node-homework repository.  This assists you by allowing you to do test driven development, letting you know what you must develop and, more or less, whether it is working properly. You have also been doing manual testing of your REST APIs using Postman.  Now you will learn how to write tests.
 
-## **11.2 Why You Should Learn to Write Automated Tests**
+## **9.2 Why You Should Learn to Write Automated Tests**
 
 The ability to write automated tests is a required development skill.  Manual testing for any complicated project is slow and error prone.  For this reason, it is not possible to have reliable continuous integration without automated testing.
 
@@ -35,7 +35,7 @@ Good testing includes both test cases written by someone who is not the develope
 
 How can you know if the testing is comprehensive?  One way is to measure the code coverage of the test suite.  If some code is not run during the test, it may be dead code, in which case it doesn't belong in the project, but if not, that code path has not been tested, and may contain bugs.  One should strive for 100% code coverage.  Even if you do have 100% code coverage, there may be bugs that the test doesn't find, because the possible modes of failure were not all checked.  There may also be race conditions that only occur when the application is under significant load, or that are caused by data size or unexpected data content.  There are packages such as `@faker-js/faker` that can provide simulated data in volume.  For some kinds of functions, such as math or logic oriented functions, one can do mutation testing with a package such as Stryker.  Stryker returns failures in various combinations, in an effort to explore different failure modes, so as to identify missed test cases.
 
-## **11.3 Concepts in Automated Software Testing**
+## **9.3 Concepts in Automated Software Testing**
 
 Read [this summary of the concepts](https://www.functionize.com/automated-testing).
 
@@ -66,11 +66,11 @@ Read [this summary of the concepts](https://www.functionize.com/automated-testin
    - Before each deployment.
    - After each deployment, to validate the deployment process itself.  These will be more limited tests.
 
-## **11.4 The `jest` and `supertest` Packages**
+## **9.4 The `jest` and `supertest` Packages**
 
 Depending on the languages and frameworks used by the project, different testing packages may be used.  You are developing in JavaScript, React, and Express.  The `jest` package [here](https://www.npmjs.com/package/jest) is commonly used for this kind of project.  
 
-A Jest test invokes product code in various ways, typically by requiring the module that contains the function to be tested and then invoking that function.  The `expect()` function is used to evaluate whether the correct result is returned.  Test cases may be grouped using the `describe()` afunction, which may group invocations to the `it()` or `test()` methods.  Each of these tests and groups is given a title, so that it is evident what has been tested or what failed.  Test cases can fail two ways: An `expect()` assertion may fail, or an error may be thrown.  If an assertion fails, the test will still proceed to check other assertions, but if an error is thrown, that ends the processing for that test.  Jest can also test a React front end, to see that user interaction with that front end gives the desired results.  We won't do front end testing for this assignment.  A jest test file, which should end with `.test.js`, might look something like this:
+A Jest test invokes product code in various ways, typically by requiring the module that contains the function to be tested and then invoking that function.  The `expect()` function is used to evaluate whether the correct result is returned.  Test cases may be grouped using the `describe()` function, which may group invocations to the `it()` or `test()` methods.  Each of these tests and groups is given a title, so that it is evident what has been tested or what failed.  Test cases can fail two ways: An `expect()` assertion may fail, or an error may be thrown.  In either case, that ends the processing for that test.  Jest can also test a React front end, to see that user interaction with that front end gives the desired results.  We won't do front end testing for this assignment.  A jest test file, which should end with `.test.js`, might look something like this:
 
 ```js
 const {fnA, fnB} = require("../codeFolder/someModule"); // The module to test
@@ -107,4 +107,4 @@ For function testing of a web API, one must also send real network requests.  To
 
 ### **Testing Your Tests**
 
-Test Driven Development tests are provided for the assignment.  How do we do that?  First, we require that you only do one expect() per test case.  This is a limitation to facilitate TDD -- you wouldn't necessarily do that for all test cases.  Second, we provide `mocks`.  Mocks are fake versions of the code that you write.  These are written to return incorrect results that your tests should find.  Third, `jest` has a reporter function.  We provide an interceptor for that, so that we can tell if your test reports a success when it should not.  The TDD won't catch every omission in your test suite, but it will get you started.
+Test Driven Development tests are provided for the assignment.  How do we do that?  First, we require that you only do one expect() per test case.  This is a limitation to facilitate TDD -- you wouldn't necessarily do that for all test cases.  Second, we provide `mocks`.  Mocks are fake versions of the code that substitute for the project code that you write.  These are written to return incorrect results that your tests should find.  Third, `jest` has a reporter function.  We provide an interceptor for that, so that we can tell if your test reports a success when it should not.  The TDD won't catch every omission in your test suite, but it will get you started.
