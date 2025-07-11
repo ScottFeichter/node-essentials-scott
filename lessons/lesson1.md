@@ -1,7 +1,5 @@
 # Week 1 Assignment: Intro to Node.js & Async JavaScript
 
-> **Note:** You need to create a `sample-files` folder inside your `assignment1` directory to store the `.txt` files (such as `demo.txt`, `largefile.txt`, and `sample.txt`) used in the code examples and demos.
-
 ## Learning Objectives
 - Understand what Node.js is and how it differs from browser JavaScript
 - Explore Node.js architecture and the V8 engine
@@ -34,19 +32,14 @@
   - Demonstrates a callback function and explains callback hell with a code example (in comments)
   - Converts the callback code to use Promises, then async/await
   - Uses `try/catch` for error handling
+  - **Important:** For each async pattern (callback, promise, async/await), your console output should include the phrase `Hello, async world!` to match the file content and test expectations.
+
 
 ### 4. Node Core Modules
 - Create a script (`core-modules-demo.js`) that:
   - Uses the `os` module to log system information (platform, CPU, memory)
   - Uses the `path` module to join two paths and log the result
-  - Uses the `fs.promises` API to write and then read a file
-  - (Bonus) Create a (`largefile.txt`) manually and Demonstrate reading a large file using streams and log chunks as they are read
+  - Uses the `fs.promises` API to write and then read a file (`demo.txt`)
+  - Create a file called `largefile.txt` in your `sample-files` folder. You can do this by writing a loop that writes many lines to the file (e.g., 100 lines of any text). Demonstrate reading `largefile.txt` using a readable stream (`fs.createReadStream`). For each chunk read, log the first 40 characters (or any summary) to the console. When the stream ends, log a message like "Finished reading large file with streams." Use the `highWaterMark` option in `fs.createReadStream` to control the chunk size (e.g., set it to 1024 for 1KB chunks). You can experiment with different values to see how it affects the number of chunks and the output.
 
-## Submission
-- Place all scripts and markdown files in the `assignment1/` folder.
-- Add your answers and code as described above.
-- Commit and push your changes.
 
-## Resources
-- [The Odin Project: Node.js](https://www.theodinproject.com/paths/full-stack-javascript/courses/nodejs)
-- [Node.js Official Docs: V8 Engine](https://nodejs.org/en/learn/getting-started/the-v8-javascript-engine) 
