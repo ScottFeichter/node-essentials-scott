@@ -12,8 +12,8 @@
 
 ## Assignment Guidelines
 
-1. **Clone the repository:**
-   - Clone the `node-homework` repository to your local machine.
+1. **Setup**
+   - You should have already done 'Getting Started' instructions, which sets up your Node-Homework Directory.
    - Work inside the `assignment1` folder for all your answers and code for this assignment.
 2. **Create a branch:**
    - Create a new branch for your work on assignment 1 (e.g., `assignment1`).
