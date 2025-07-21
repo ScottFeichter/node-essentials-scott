@@ -7,6 +7,11 @@
 **Topics**:
 
 1. What is Node?
+2. Running Node
+3. Syntax differences between Node and browser side JavaScript
+4. Other Important Differnces between Node and Browser JavaScript
+5. File System Access with Async Operations
+6. More on Async Functions
 
 ## **4.1 What is Node**
 
@@ -28,7 +33,7 @@ At your terminal, type `Node`.  (You should have completed the setup assignment.
 
 You should have set up your `node-homework` repository and folder.  In the terminal, cd to that folder and start VSCode.  Create a first.js file in the assignment1 directory, with a console.log() statement in it.  Start a VSCode terminal, and type "node ./assignment1/first".  You do not have to give the `.js` extension.  Ok, so much for the very simple stuff.
 
-## **4.3 Some Differences of Node and Browser Based JavaScript**
+## **4.3 Syntax Differences between Node and Browser Based JavaScript**
 
 There are a couple of syntax differences in Node.  Browser side JavaScript follows the ESM standard for importing and exporting functions and objects to/from other modules.  In browser side JavaScript, you load other modules as follows:
 
