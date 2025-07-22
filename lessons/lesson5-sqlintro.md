@@ -2,7 +2,7 @@
 
 ## **Lesson Overview**
 
-**Learning objective**: Students will gain foundational knowledge of SQL databases using Postgres. They will understand the basic purpose and attributes of SQL databases.  They will learn the SQL language, including SELECT, INSERT, UPDATE, and other standard SQL verbs.  They will understand JOINs and transactions, primary and foreign keys, associations, and table constraints.  They will learn how to create tables with schemas.  This is a generalized introduction to SQL, so no Object Relational Mapper (ORM) will be used.  In this lesson, the focus is on SQL itself, so there will be no JavaScript code developed.
+**Learning Objectives**: Students will gain foundational knowledge of SQL databases using Postgres. They will understand the basic purpose and attributes of SQL databases.  They will learn the SQL language, including SELECT, INSERT, UPDATE, and other standard SQL verbs.  They will understand JOINs and transactions, primary and foreign keys, associations, and table constraints.  They will learn how to create tables with schemas.  This is a generalized introduction to SQL, so no Object Relational Mapper (ORM) will be used.  In this lesson, the focus is on SQL itself, so there will be no JavaScript code developed.
 
 **Topics**:
 
