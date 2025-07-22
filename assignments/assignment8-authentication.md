@@ -295,7 +295,7 @@ if (process.env.ALLOWED_ORIGINS) {
 };
 ```
 
-This needs a little explaining.  You don't know what origins you are going to allow.  You have to list them in an environment variable, in this case ALLOWED_ORIGINS.  The values you permit will be in a list in that environment variable, separated by commas.  If you don't specify any, CORS won't be present, and Express won't respond to any cross-origin requests.  Postman knows nothing about origins, so Postman testing will still work.  Suppose you are testing your React application, which connects to your back end app through the Vite proxy.  If the React app is running on `http://localhost:3001`, you add that to your ALLOWED_ORIGINS environment variable, so that CORS allows in the React requests.  When you deploy to the Internet, your React app might be running on `https://my-todos.render.com`.  You would need to have that URL in the ALLOWED_ORIGINS environment variable for your back end, which would also be deployed to the Internet.  Your CORS configuration has to specify whether credentials (cookies) are allowed, which headers are allowed, and which methods -- everything else is rejected.  The request might go through, but without the cookies or some of the headers.
+This needs a little explaining.  You don't know what origins you are going to allow.  You have to list them in an environment variable, in this case ALLOWED_ORIGINS.  The values you permit will be in a list in that environment variable, separated by commas.  If you don't specify any, CORS won't be present, and Express won't respond to any cross-origin requests.  Postman knows nothing about origins, so Postman testing will still work.  Suppose you are testing your React application, which connects to your back end app through the Vite proxy.  If the React app is running on `http://localhost:3001`, you add that to your ALLOWED_ORIGINS environment variable, so that CORS allows in the React requests.  When you deploy to the Internet, your React app might be running on `https://my-todos.render.com`.  You would need to have that URL in the ALLOWED_ORIGINS environment variable for your back end, which would also be deployed to the Internet.  When your back end is deployed to the Internet, you may want to test from your React app on your local machine, in which case it would need `http://localhost:3001` in the list of allowed origins. Your CORS configuration has to specify whether credentials (cookies) are allowed, which headers are allowed, and which methods -- everything else is rejected.  The request might go through, but without the cookies or some of the headers.
 
 Next, the XSS protection:
 
@@ -303,7 +303,7 @@ Next, the XSS protection:
 app.use(xss());
 ```
 
-Important: This has to come after the cookie parser and any body parsers.  The body parser you are using is `express.json()`.  The XSS protection comes after these parsers so that it can sanitize req.body.
+Important: This has to come after the cookie parser and any body parsers.  The body parser you are using is `express.json()`.  The XSS protection comes after these parsers so that it can sanitize req.body.  The xss middleware does not sanitize the response, just the request, so if you have suspect data, you need to sanitize it before you send it.  The express-xss-sanitizer package exports a sanitizer function you could use.
 
 Whew, just about done.
 
