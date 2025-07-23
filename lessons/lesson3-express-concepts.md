@@ -2,22 +2,23 @@
 
 ## **Lesson Overview**
 
-**Learning objective**: Students will learn what Express is and how it Augments Node to make an easy and comprehensive framework for the development of web applications.  Students will get some foundational knowledge of Internet protocols, REST APIs, and JSON.  Students will learn the basic elements of an Express application and the purpose of each.
+**Learning objective**:  Students will get some foundational knowledge of Internet protocols, REST APIs, and JSON.  Students will learn more about what Express is and how it augments Node to make an easy and comprehensive framework for the development of web applications. Students will learn the basic elements of an Express application and the purpose of each.
 
 **Topics**
 
-1. What is Express?
+1. Review: What is Express?
 2. Internet Basics
-3. REST and JSON
-4. Elements of an Express Application
-5. Middleware Functions, Route Handlers, and Express Error Handling
-6. Parsing an HTTP Request
+3. HTTP
+4. REST and JSON
+5. What do Route Handlers Do In Express?
+6.  Middleware Functions, Route Handlers, and Error Handling
+7. Parsing an HTTP Request
 
-## **3.1 What is Express**
+## **3.1 Review: What is Express**
 
-As we have seen, all of the elements needed to create a web application are provided by Node, including network API access, the HTTP server, event handlers, streams, etc.  Express assembles these in an easy to use framework, where the flow of control is easily understood and where each of the elements is compact and easily created.  We will give specific illustration of this below.  Express is very widely used, and as a result, it has a comprehensive ecosystem of additional plug-in packages that facilitate data exchange, HTTP requist parsing, and the construction of HTTP responses for the applications you create.
+As we have seen, all of the elements needed to create a web application are provided by Node, including network API access, the HTTP server, event handlers, streams, etc.  Express assembles these in an easy to use framework, where the flow of control is easily understood and where each of the elements is compact and easily created. Express is very widely used, and as a result, it has a comprehensive ecosystem of additional plug-in packages that facilitate data exchange, HTTP request parsing, and the construction of HTTP responses for the applications you create.  But, to use it effectively, you need to understand the protocols and data flows involved, so this lesson describes them.
 
-## **3.2 Internet Basics.**
+## **3.2 Internet Basics**
 
 All Internet traffic is based on layers of protocols.  The Internet runs on IP: Internet Protocol.  When data is sent over the Internet, it is broken up into packets.  Each packet has a source address, a destination address, a protocol and a port.  The addresses are four part numbers like 9.28.147.56.  The protocol is also a number, indicating what kind of packet it is, and the port is also a number, which endpoints use to figure out which process on a machine should get the packet.  A network of routers figures out where the destination machine is and forwards the packet.  
 
@@ -25,7 +26,7 @@ For REST, you will use a protocol on top of IP called TCP, which stands for Tran
 
 Remember all of this.  It might come up during trivia night at your local bar.
 
-### **HTTP**
+## **3.3 HTTP**
 
 REST requests flow over a protocol called HTTP, which stands for Hypertext Transfer Protocol.  HTTP over an SSL connection is called HTTPS.  Each HTTP request uses one of a small number of methods.
 
@@ -53,7 +54,7 @@ For REST requests, GET, POST, PUT, PATCH, and DELETE are used.  Each HTTP reques
 
 - A body.  POST, PUT and PATCH requests often have a body. Responses for each of the methods also often have a body.  For REST, the body is usually JSON.  By convention, POST operations are used to create some data on the back end, PATCH to update that data, and PUT to replace that data.  Never use GET requests to change data!
 
-Each HTTP response packet also has components:
+For every HTTP request, there is exactly one HTTP response (although the body of the response, if it is long, might be broken up into chunks.  Each HTTP response packet also has components:
 
 - Headers
 - A result code
@@ -63,11 +64,11 @@ Pay attention to this part.  You will use all the REST operations.  You will nee
 
 ### **Stuff the Browser Keeps Track Of**
 
-The browser keeps track of the origin for a request.  This is the address and port for the URL.  When a browser application makes a REST request, that may go to the origin of the application itself, or to a different origin.  If it goes to a different origin, that's a cross origin request.
+Not all HTTP requests originate at a browser, but for those that do, the browser keeps track of information associated with the request.  The browser keeps track of the origin for a request.  This is the address and port for the URL that is the target of the request.  When a browser application makes a REST request, that may go to the origin from which the application was loaded, or it might be a fetch() call to a different origin.  If it goes to a different origin, that's a cross origin request.
 
 The browser also keeps track of cookies, which are key-value pairs.  These are set because a Set-Cookie header was sent in a server response, and they store data, typically small amounts, but certainly less than 4k.  They also have various flags.  Browsers have policies for which Set-Cookie headers will be honored, and silently discard the rest.  Cookies can be sent on subsequent requests from the browser application, depending on the request and also on the browser policies, until such time as the cookie expires.  Cookie content is available to the JavaScript in the browser application, unless it is an HttpOnly cookie.  A server sets an HttpOnly cookie to store information about the client, such as whether the user has logged on and who that user is.  Cookies are not usually used unless the requesting application is running in a browser.
 
-## **3.3 REST and JSON**
+## **3.4 REST and JSON**
 
 REST stands for Representational State Transfer, which is a pretty opaque name for a standard.  What it means is that HTTP requests and responses are exchanged, and management of the state of the conversation and the security governing the exchange is not a part of the REST protocol itself.
 
@@ -128,100 +129,15 @@ Binary objects like JPEGs are never sent in JSON.  You can still do a REST reque
 
 JSON objects can be parsed or created in any modern computer programming language: Python, Java, Rust, C++, etc..  In some NoSQL databases like MongoDB, every entry in the database is basically a JSON object.
 
-## **3.4 Express Concepts**
+## **3.5 What do Route Handlers Do In Express?**
 
-In the previous section on REST and HTTP, you learned about the components of an HTTP request: a method (such as GET, POST, PUT, PATCH, or DELETE), a path, query parameters, headers, sometimes a body, and cookies.  In Express, you have the following elements:
+For each HTTP request sent to a server, there must be exactly one response.  If no response is sent, a user might be waiting at the browser for a timeout.  If several responses are sent for one request, Express reports an error instead of sending the second one.  A route is specified by a **method** (GET, POST, PUT, PATCH, DELETE, and several others) and a **path**, a part of the URL after the host and port, but before the query parameters, something like `/info/books`.
 
-1. An app, as created by a call to the Express library.
-
-2. A collection of route handlers.  A request for a particular HTTP method and path are sent to a route handler.  For example, a POST for /notices would have a route handler that handles this route.  A route handler is a function with the parameters req, res, and sometimes next.  The req parameter is a structure with comprehensive information about the request.  The res parameter is the way that the route handler sends the response.  The next parameter is needed in case the route handler needs to send an error to the error handler.
-
-3. Middleware.  Middleware functions do some initial processing on the request.  Sometimes a middleware function checks to see if the request should be sent on to the next piece of middleware in the chain or the route handler.  For some requests, the middleware function itself returns a response to the request.  In other cases, a middleware function may add additional information to the req object, and may also set headers, including sometimes set-cookie headers, in the res object, and once it has done that, it calls the next handler, which might be another middleware function, and might be the route handler for the route.  Middleware functions typically have three parameters, req, res, and next.  A standard piece of middleware you'll create is the not-found handler, which is invoked when no route handler could be found for the method and path.
-
-4. An error handler.  This is at the end of the chain, in case an error occurs.  There is only one, and it takes four parameters, err, req, res, and next, which is how Express knows it is an error handler.
-
-5. A server.  This is created as a result of an app.listen() on a port.
-
-The mainline code in the app does the following:
-
-1. It creates the app.
-
-2. It specifies a chain of middleware functions and route handlers to be called, each with filter conditions based on the method and path of the request.  These conditions determine each should be called.  Middleware functions are configured in the chain via an app.use() statement.  Route handlers are configured in the chain via app.get(), app.post(), and similar statements.
-
-**Order matters in this configuration.**  The first app.use(), app.get(), or other such statement that is matched determines what function is called.  If that is a middleware function, it will often do a next, and then the next middleware function or route handler in the chain that matches the HTTP method and path is called.  While middleware functions often do a next() without parameters, route handlers only do a next(err), in cases when an error should be passed to the error handler.
-
-3. It tells the app to listen on a port.
-
-Here is an example of what app.js might look like.
-
-```js
-const express = require("express");
-
-const app = express();
-
-// the following statements configure the chain of middleware and route handlers.  Nothing happens with them until a request is received.
-
-app.use((req, res, next) => {
-  // this is called for every request received.  All methods, all paths
-  req.additional = { this: 1, that: "two" };
-  const content = req.get("content-type");
-  if (req.method == "POST" && content != "application/json") {
-    next(new Error("A bad content type was received")); // this invokes the error handler
-  } else {
-    next(); // as OK data was received, the request is passed on to it.
-  }
-});
-
-app.get("/info", (req, res) => {
-  // this is only called for get requests for the specific path
-  res.send("We got good stuff here!");
-});
-
-app.use("/api", (req, res, next) => {
-  // this is called for all methods, but only if the path begins with /api
-  // and only if the request got past that first middleware.
-  // ...
-});
-
-app.use((req, res) => {
-  // this is the not found handler.  Nothing took care of the request, so we send the caller the bad news.  You always need one of these.
-  res.status(404).send("That route is not present.");
-});
-
-app.use((err, req, res, next) => { // The error handler.  You always need one.
-  console.log(err.constructor.name, err.message, err.stack);
-  res.status(500).send("internal server error");
-});
-
-let server = null;
-
-try {
-  server = app.listen(3000);
-  console.log("server up and running.");
-} catch {
-  console.log("couldn't get access to the port.");
-}
-```
-
-Of course, the actual functions comprising the route handlers and middleware functions are not typically declared inline.  Suppose one set of route handlers deals with customers, via GET/POST/PATCH/PUT/DELETE requests on all paths that start with `/customers`, and suppose you have another set for `/orders`.  Typically you would have a `./controllers` folder, with a `customerController.js` for all the route handlers for customers and an `orderController.js` for all the route handlers for orders.  Typically also, you would have a `./routes` folder, for modules that create express routers.  An express router is a way of associating a collection of routes with a collecton of route handlers.  You'd also have a middleware folder.  In the mainline code, you might have statements like:
-
-```js
-const customerRouter = require("./routes/customer")
-const customerMiddleware = require("./middleware/customerAuth)
-app.use("/customers", customerMiddleware, customerRouter)
-```
-
-The customerMiddleware function might check if the customer is logged in.  If not, it could send a response with a 401 status code, and possibly with an error message in the body.  If a customer is logged in, the middleware function might add additional information to the req object, such as the ID of the customer.  Then it would call next, so that processing would pass to the customerRouter.
-
-For each request sent to the server, there must be exactly one response.  If no response is sent, a user might be waiting at the browser for a timeout.  If several responses are sent for one request, Express reports an error instead of sending the second one.
-
-## **What do Route Handlers Do?**
-
-route handlers may retrieve data and send it back to the caller.  Or, they may store, modify, or delete data, and report the success or failure to the caller.  Or, they may manage the session state of the caller, as would happen, for example, with a logon.  The data accessed by route handlers may be in a database, or it may be accessed via some network request.  When sending the response, a route handler might send plain text, HTML, or JSON, or any number of other content types.  A route handler must either send a response or call the error handler to send a response.  Otherwise the request from the caller will wait until timeout.
+Associated with each route in Express is a route handler, the function that Express calls to interpret the request and send back the response.  Route handlers may retrieve data and send it back to the caller. Or, they may store, modify, or delete data, and report the success or failure to the caller.  Or, they may manage the session state of the caller, as would happen, for example, with a logon.  The data accessed by route handlers may be in a database, or it may be accessed via some network request.  When sending the response, a route handler might send plain text, HTML, or JSON, or any number of other content types.  A route handler must either send a response or call the error handler to send a response.  Otherwise the request from the caller will wait until timeout.
 
 Route handlers and middleware functions frequently do asynchronous operations, often for database access.  While the async request is being processed, other requests may come to the server, and they are dispatched as usual.  Route handlers and middleware may be declared as async, so that the async/await style of programming can be used.  These functions don't return a value of interest -- the interesting stuff is in the response, not the return value.
 
-## **3.5 Middleware Functions, Route Handlers, and Error Handling**
+## **3.6 Middleware Functions, Route Handlers, and Error Handling**
 
 Let's sum up common characteristics of middleware functions and response handlers.  Let's also explain how errors are handled.
 
@@ -243,7 +159,7 @@ The Express 5 error handler catches all the errors thrown by middleware function
 
 **However, please note:** Middleware functions and route handlers sometimes call functions that have callbacks.  They may send responses or call next() from within the callback.  That works fine.  But they must **never** throw an error from within a callback.  That would crash the server.  They must call `next(error)` instead.
 
-## **3.6 Parsing an HTTP Request**
+## **3.7 Parsing an HTTP Request**
 
 One very common piece of middleware is the following:
 
