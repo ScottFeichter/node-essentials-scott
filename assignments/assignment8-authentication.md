@@ -68,11 +68,13 @@ passport.authenticate("local", callback)
 
 **Note the following point carefully.**  What does the passport.authenticate() function return, actually?  The answer is, it returns **a middleware function**, the middleware to be used for the "local" strategy.  But the actual authentication hasn't occurred yet.  It doesn't happen until that middleware is called.
 
-We call the middleware function with a req and a res.  Passport doesn't care about most of the req.  All it's going to look at, in the case of the local strategy, is the body, and in particular, the email and password attributes of the body.  Also we need a res. Passport doesn't care about the res, so we can just pass {}.  Now suppose we have a user already registered, with email "jim@sample.com", and password "wX23-combo".  For a little unit test, we could do the following:
+We call the middleware function with a req and a res.  Passport doesn't care about most of the req.  All it's going to look at, in the case of the local strategy, is the body, and in particular, the email and password attributes of the body.  Also we need a res. Passport doesn't care about the res, so we can just pass {}.  Now suppose we have a user already registered, with email "jim@sample.com", and password "wX23-combo".  (You could run your server and do a Postman register request to set this up.)  For a little unit test, we could do the following.  Create a test folder, and within it a file called ppLocalUnitTest.js, with the following contents.
 
 ```js
-const req = { body: { email: "jim@sample.com", password: "wX23-combo" } };
-const reportPassportResult(err, user) {
+require("../passport/passport");
+const passport = require("passport");
+const req = { body: { email: "jim@sample8.com", password: "wX23-combo" } };
+const reportPassportResult = (err, user) => {
   if (err) {
     return console.log("An error happened on authentication:", err.message);
   }
@@ -81,11 +83,11 @@ const reportPassportResult(err, user) {
   }
   console.log("Authentication Failed" )
 };
-const passportLocalMiddleware = passport.authenticate("local", reportPassportResult)
-passportMiddleware(req, {});
+const passportLocalMiddleware = passport.authenticate("local", reportPassportResult);
+passportLocalMiddleware(req, {});
 ```
 
-And, lo and behold, we get the user information back, just as passport got it from the database.  If we specify a bad password, we get Authentication Failed.  And if the database is down, we get an error.
+And, lo and behold, we get the user information back, just as passport got it from the database.  If we specify a bad password, we get Authentication Failed.  And if the database is down, we get an error.  By the way, this is a good trick to learn: As you develop code, write unit tests for it.
 
 The login() function in your user controller still uses the memory store, just to keep track of who is logged in.  You can now comment out that function.  Add a new route handler, this time in passport.js.  Here is what it should do:
 
@@ -159,16 +161,20 @@ passport.use(
 )
 ```
 
-You are telling passport how to validate the cookie with each request.  It just checks to see if the signature is correct and if the JWT hasn't expired.  You can have a little unit test for this as well: 
+You are telling passport how to validate the cookie with each request.  It just checks to see if the signature is correct and if the JWT hasn't expired.  You can have a little unit test for this as well.  Create the file jwtUnitTest.js in your test directory, with this content.  Then run it.
 
 ```js
+const jwt = require("jsonwebtoken");
+const passport = require("passport");
+require ("../passport/passport");
+
 let token = jwt.sign(
   { name: "Frank", email: "frank@sample.com" },
     process.env.JWT_SECRET,
   { expiresIn: "1h" },
 );
 const req = { cookies: { jwt: token } };
-const reportPassportResult(err, user) {
+const reportPassportResult = (err, user) => {
   if (err) {
     return console.log("An error happened on authentication:", err.message);
   }
@@ -177,8 +183,8 @@ const reportPassportResult(err, user) {
   }
   console.log("Authentication Failed" )
 };
-const passportLocalMiddleware = passport.authenticate("jwt", reportPassportResult)
-passportMiddleware(req, {});
+const passportJWTMiddleware = passport.authenticate("jwt", reportPassportResult)
+passportJWTMiddleware(req, {});
 ```
 
  And the test shows that passport does return the payload if the jwt signature is valid.  Use a bad secret to sign the jwt, and then passport reports that authentication failed, as it would also do if the token had expired.
@@ -233,7 +239,7 @@ The other change for logoff is to protect the logoff route.  This is being a lit
 
 ## **Testing with Postman**
 
-You should now test `/user/register` and `/user/logon` with Postman.  You should see two differences from previous behavior.  First, you should see the csrfToken being returned in the body of the request.  Second, you should see the jwt cookie being set.  However, none of your task routes will work, nor will your logoff route, because the csrrfToken is not in the X-CSRF-TOKEN header.  Try them out to make sure this is true.
+You should now test `/user/register` and `/user/logon` with Postman.  You should see two differences from previous behavior.  First, you should see the csrfToken being returned in the body of the request.  Second, you should see the jwt cookie being set.  However, none of your task routes will work, nor will your logoff route, because the csrfToken is not in the X-CSRF-TOKEN header.  Try them out to make sure this is true.
 
 You want to catch csrfToken when it is returned from a register or logon.  Open up the logon request in postman and you see a Tests tab.  Click on that, and plug in the following code:
 
