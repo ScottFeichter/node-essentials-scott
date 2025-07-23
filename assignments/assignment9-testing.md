@@ -161,7 +161,7 @@ Do another `npm run test`.  All tests should succeed.  If a test fails, the erro
 Some automated tests of your tests are provided.  You can run these now, with the following command:
 
 ```bash
-npm run lesson11TDD
+npm run lesson9TDD
 ```
 
 When you run the tests of the tests, it causes "mocks" of the application code to be run.  The mocks implement all the same function, but with some intentionally introduced bugs.  Your tests should identify these bugs.  This is in no way a complete test of your tests.
