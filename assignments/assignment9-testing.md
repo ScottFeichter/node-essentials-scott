@@ -234,16 +234,62 @@ beforeAll(async () => {
     password: "Pa$$word20",
     name: "Alice",
   });
+  prisma.$disconnect();
 });
 ```
 
-Clearly you would not want to do this step unless you are pointing to the test database.  When you pass a function to `beforeAll()` or `it()` or other jest functions, you can declare it as async so that you can use await.
+Clearly you would not want to do this step unless you are pointing to the test database.  When you pass a function to `beforeAll()` or `it()` or other jest functions, you can declare it as async so that you can use await.  It is important to do the prisma.$disconnect().  If not, Jest may not terminate cleanly, and you might have a zombie process.
 
 Why do we need the user records? Each task record has a foreign key, the userId.  If this is not provided or if it doesn't correspond to a real user record, you get a constraint violation from the database.
 
+There are some special issues when testing route handlers and middleware functions.  They take the parameters `req`, `res`, and sometimes `next`.  For the req and res, we use the `node-http-mocks` package.  You can configure the mock req object with the content you are testing: body, query parameters, headers, path parameters, whatever.  Then you call the function to be tested, to see if the result is as you expect.
+
+A route hander or middleware function migth do the following:
+
+- Call res.send() or res.json() to send a reply.
+- Call next().
+- Throw an error.
+- None of the above.  If a route handler or middleware function doesn't do any of these, it is ill behaved, and your test should catch this.
+
+To know what happened, you have to call the function and check what is returned.  The function might be async.  Or, it might do the res.json() or the call to next() from within a callback.  Your test needs to call the function, and wait for the completion.  When the completion within a callback, or if the code to be tested calls next(), that's a little tricky.  If it's your job to write the tests, you may have no access to the source code of the function.  If your team uses test first development, that source code might not even be written yet.  
+
+You should use the following utility function:
+
+```js
+const waitForRouteHandlerCompletion = async (func, req, res) => {
+  let next;
+  const promise = new Promise((resolve) => {
+    next = jest.fn(() => resolve());
+    res.on("finish", () => {
+      resolve();
+    });
+  });
+  await func(req, res, next);
+  await promise;
+  return next;
+};
+module.exports = waitForRouteHandlerCompletion;
+```
+
+Create a file in your /node-homework/test directory called waitForRouteHandlerCompletion.js, with the code above.  You'll call this function from several of the tests you create.  You are about to test the create() function of the task controller. You use the utility routine as follows as follows:
+
+```js
+const next = await waitForRouteHandlerCompletion(create, req, res);
+```
+
+Let's explain this.  The utility function creates a promise that is resolved by either of two things: `create()` sends the response in the res, or `create()` calls next().  The next() function is built by the jest.fn() call.  When the next() is created, a callback is passed.  That callback is called if create() calls next(). Res objects post a "finish" event when the response is sent, so the utility function resolves the promise if that happens. (Sometimes you listen for the "finish" event in product code too.)  Then the utility function awaits the create().  Then the utility function awaits the promise.  And then it returns the next().  If the create() throws an error, the waitForRouteHandlerCompletion() throws that error, and you can catch it in your test or let Jest catch it.  The other nice thing about a function created with jest.fn() is you can find out if it has been called, like so:
+
+```js
+expect(next).toHaveBeenCalled()
+```
+
+When you test middleware functions, you can see if they called next().  You can also get the parameters next() was called with, in case the tested function calls the error handler.  If no exception is thrown, and if next() has not been called, then you know that res contains your finished result after await waitForRouteHandlerCompletion(), and you can do expect() assertions on it.  If the function you are testing is ill-behaved, the promise might not resolve, and then Jest times out, so your test identifies the problem.
+
+You don't have to understand this fully.  Just use this utility in your tests.  You'll need to add a require() statement for it.
+
 ### **The First Test**
 
-We want to call the task controller `create` method.  That method takes two parameters, the `req` and the `res`.  We need to simulate those.  To that end, we have the `node-http-mocks` package.
+We want to call the task controller `create` method.  That method takes two parameters, the `req` and the `res`.  We need to simulate those.  To that end, we have the `node-http-mocks` package.  
 
 Our first test looks like this:
 
@@ -254,14 +300,14 @@ describe("testing task creation", () => {
       method: "POST",
       body: { title: "first task" },
     });
-    saveRes = httpMocks.createResponse();
-    await create(req, saveRes);
+    saveRes = httpMocks.createResponse({eventEmitter: EventEmitter}); // be sure you create the event emitter
+    await waitForRouteHandlerCompletion(create,req, saveRes);
     expect(saveRes.statusCode).toBe(201);
   });
 })
 ```
 
-OK, all looks good.  This is a valid task object for creation.  So, run the test.  Whoa! That failed.  Have a look at the log to figure out why.  What do you see?  Ah, of course, `req.user` is not set!  In the app, task creation is behind the `auth` middleware, and that is what sets up req.user.  We aren't going through that route when the controller is invoked directly.  So, we still have a valid test, but we need to rename it and catch the error, as follows:
+OK, all looks good.  This is a valid task object for creation.  So, run the test.  Whoa! That failed.  Have a look at the log to figure out why.  What do you see?  Ah, of course, `req.user` is not set!  In the app, task creation is behind the jwt middleware, and that is what sets up req.user.  We aren't going through that route when the controller is invoked directly.  So, we still have a valid test, but we need to rename it and catch the error, as follows:
 
 ```js
    it("14. cant create a task without a user id", async () => {
@@ -269,9 +315,9 @@ OK, all looks good.  This is a valid task object for creation.  So, run the test
       method: "POST",
       body: { title: "first task" },
     });
-    saveRes = httpMocks.createResponse();
+    saveRes = httpMocks.httpMocks.createResponse({eventEmitter: EventEmitter});;
     try {
-      await create(req, saveRes);
+      await waitForRouteHandlerCompletion(create,req, saveRes);
     } catch (e) {
       expect(e.name).toBe("TypeError");
     }
@@ -348,30 +394,29 @@ Run the tests, and make sure all of them pass.
 
 ## **Tests of the User Controller**
 
-Because of the length of this assignment, the user.controller.test.js file is **optional**.  But, be sure you understand the following.  Pay particular attention to the special async processing needed to test the login() function.
+Because of the length of this assignment, the user.controller.test.js file is **optional**.  Be sure you do implement the network testing that follows this section.
 
-We want to test logon.  But, we have a couple of problems.  The login method sets a cookie.  If that cookie is not set, things aren't working, so we have to test this.  The first problem is that a res object returned by `httpMocks.createResponse()` doesn't keep track of cookies.  The second problem is that, within the login method is a call to passport, with a callback inside.  The res.json() call only happens within that callback.  So, if your test code does an `await login(req,res)`, that will return before the res object is updated, and the test will fail.  You will likely get an error message from jest that you are not handling asynchronous operations correctly.  Now, one could ask the author of the login method to wrapper the call to passport within a promise.  But, it's considered poor form to ask for product code changes just to enable a test, at least if those aren't really necessary.
-
-So, we create an enhanced version of the mock res object.  This one keeps track of 'Set-Cookie' operations, and it also provides a means of waiting on a promise that will resolve when the `res.json()` call occurs.  See the MockRequestWithCookies() function below.
+We want to test logon.  But, we have a problem.  The login method sets a cookie.  If that cookie is not set, things aren't working, so we have to test this.  The first problem is that a res object returned by `httpMocks.createResponse()` doesn't keep track of cookies. So, we create an enhanced version of the mock res object.  This one, created by MockRequestWithCookies, keeps track of 'Set-Cookie' operations.
 
 Create another file in the test directory called `user.controller.test.js`.  This should start:
 
 ```js
 require("dotenv").config();
+const waitForRouteHandlerCompletion = require("./waitForRouteHandlerCompletion");
 const { PrismaClient } = require("@prisma/client");
 const { createUser } = require("../services/userService");
 const httpMocks = require("node-mocks-http");
-const { login, register, logoff } = require("../controllers/userController");
-require("../passport/passport");
+const { register, logoff } = require("../controllers/userController");
+const { logonRouteHandler, jwtMiddleware } = require("../passport/passport")
 
 // a few useful globals
 let saveRes = null;
 let saveData = null;
 
 const cookie = require("cookie");
-function MockResponseWithCookies() {
+function MockResponseWithCookies({eventEmitter: EventEmitter}) {
   const res = httpMocks.createResponse();
-  res.cookie = (name, value, options = {}) => {
+  res.cookie = (name, value, options = {}) => { // this adds the function to the res, so that it stores cookies
     const serialized = cookie.serialize(name, String(value), options);
     let currentHeader = res.getHeader("Set-Cookie");
     if (currentHeader === undefined) {
@@ -380,18 +425,6 @@ function MockResponseWithCookies() {
     currentHeader.push(serialized);
     res.setHeader("Set-Cookie", currentHeader);
   };
-
-  res.jsonPromise = () => {
-    return new Promise((resolve) => {
-      res.oldJsonMethod = res.json;
-      res.json = (...args) => {
-        res.oldJsonMethod(...args);
-        res.json = res.oldJsonMethod;
-        resolve();
-      };
-    });
-  };
-
   return res;
 }
 
@@ -405,25 +438,22 @@ beforeAll(async () => {
     password: "Pa$$word20",
     name: "Bob",
   });
+  prisma.$disconnect();
 });
 let jwtCookie;
 ```
 
-We are adding a `cookie()` function to keep track of the "Set-Cookie" operations, performing appropriate serialization and storing them in an array.  We are also putting a promise wrapper around the `res.json()` function so that we know when it has been called.  We only need that one for `login()`.
-
-Now we can create the logon test:
+Now you can create the logon test:
 
 ```js
-describe("testing login, register, and logoff", () => {
+describe("testing logon, register, and logoff", () => {
   it("33. The user can be logged on", async () => {
     const req = httpMocks.createRequest({
       method: "POST",
       body: { email: "bob@sample.com", password: "Pa$$word20" },
     });
     saveRes = MockResponseWithCookies();
-    const jsonPromise = saveRes.jsonPromise();
-    login(req, saveRes); // no need for await here
-    await jsonPromise; // because we do it here, to return after the res.json().
+    await waitForRouteHandlerCompletion(logonRouteHandler, req, saveRes);
     expect(saveRes.statusCode).toBe(200); // success!
   });
 })
@@ -457,26 +487,35 @@ Add the following tests:
 
 45. The logoff clears the cookie.
 
+61. jwtMiddleware Returns a 401 if the JWT cookie is not present in the req.
+
+62. Returns a 401 if the JWT is invalid.
+
+Hint: Create a signed JWT cookie, but sign it with a bogus secret.  Put that in req.cookies.jwt.
+
+63. Returns a 401 if the JWT is valid but the token isn't.
+
+Hint: req.cookies.jwt should have a JWT cookie with a csrfToken in the payload (any string).  Put an X-CSRF-TOKEN header in the req, but use a different string.
+
+64. Calls next() if both the token and the jwt are good.
+
+65. If both the token and the jwt are good, req.user.id has the appropriate value.
+
+Hint: The jwt payload has to have id: 5, or some other integer, and req.user.id should have the same integer.
+
 For the last test above, when you retrieve the setCookieArray from saveRes, it should contain a string starting with "jwt=", and that string should contain "Jan 1970".  Cookies are cleared by setting the expiration date to some time in the past.
 
 If you have done this optional part of the assignment, verify that "npm run test" runs all these tests successfully.
 
 ## **Testing Actual Network Operations**
 
-One could write similar tests for the routers and the middleware, and in a real Express project, you'd do exactly that.  At some point, you need to link these, to see if they all work together. For this, we use supertest.  Create another file in the test directory called `user.function.test.js`.  This is to call the user functions.  You will need to change `app.js` as follows:
+At some point, you need test real network requests. For this, we use supertest.  Create another file in the test directory called `user.function.test.js`.  This is to call the user functions.  You have the following line in app.js.
 
 ```js
-let server = null;
-try {
-  server = app.listen(port, () =>
-    console.log(`Server is listening on port ${port}...`),
-  );
-} catch (error) {
-  console.log(error);
-}
-
-module.exports = { app, server };
+module.exports = { app, server }; 
 ```
+
+This was for supertest, so that your tdd would work, but you use those exports now.
 
 The new test file should start out as follows:
 
@@ -494,22 +533,18 @@ beforeAll(async () => {
   const prisma = new PrismaClient();
   await prisma.Task.deleteMany(); // delete all tasks
   await prisma.User.deleteMany(); // delete all users
+  prisma.$disconnect();
   agent = request.agent(app);
 });
 
 afterAll(async () => {
-  await new Promise((resolve, reject) => {
-    server.close((err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
+  server.close();
 });
 ```
 
 Let's explain this code.  As usual, we load the environment variables we need, and make sure we are pointing to the test database from the start.  We are using cookie based security, so we have to keep track of the cookies.  Fortunately, the supertest agent does that for us.  We configure the agent with the app so that the actual operations can be sent to the app.  As usual, we clean the database.
 
-**It is very important to stop the server at the end of the test.**  If this doesn't occur, your app could be left as a zombie process, and that's a mess.  That's why the server value is exported from your app.  The call to `server.close()` is asynchronous.  It doesn't return a promise, but it does provide a callback, so we have wrapped the call in a promise, and there is an await for that promise to make sure it completes.
+**It is very important to stop the server at the end of the test.**  If this doesn't occur, your app could be left as a zombie process, and that's a mess.  That's why the server value is exported from your app.
 
 Now for the first test of this type:
 
@@ -563,8 +598,6 @@ Then, add the following additional tests:
 
 49. You can logon as the newly registered user.
 
-Note: You don't have to worry about the asynchronous call to passport here.  That will have completed as soon as the call to the agent returns.
-
 50. You can logoff.
 
 Hint: The logoff route is protected.  What do you need to put in the request header?  Where can you get the needed value? Why didn't you have to do this for the controller test?
@@ -605,7 +638,7 @@ Even when you do have comprehensive code coverage, the tests may be, and this ca
 
 ### **Answers**
 
-1. Logoff is a post operation that could be triggered by cross site request forgery.  It is important to include a csrf token with the request to protect against this.  A test is needed to verify that this protection is in place.
+1. Logoff is a post operation that could be triggered by cross site request forgery.  A test is needed to verify that this protection is in place. I don't know why an attacker would bother to trigger a logoff, but it is best practice to avoid the attack.
 
 2. To do a task operations functional test, one would first check that none of the task operations can be performed without being logged on.  Then, one would do a logon.  Then, one would check that none of the task operations that change data, those being POST, PATCH, and DELETE, can be done without a CSRF token.  Then, each of the task operations: POST /tasks, PATCH /task/:id, GET /tasks, GET /tasks/:id, and DELETE /tasks/:id, should be tested for correct responses.  One should also check that PATCH, GET, and DELETE operations don't give access to data that doesn't belong to the currently logged on user.  This is the minimum, but might suffice if there are adequate unit tests.
 
