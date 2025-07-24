@@ -31,7 +31,7 @@ Here is a basic video summary of node capabilities: [What is Node.js?](https://y
 
 At your terminal, type `Node`.  (You should have completed the setup assignment.  If this command doesn't do anything, go back and do the setup.)  This starts the environment, and you can enter and run JavaScript statements.  Try a console.log().  You may notice one difference from the browser environment.  Where does the output appear?  It appears in your terminal.  Obvious, right?  If you open up the console in your browser developer tools, you will not see the output for Node console.log() statements.  We have had some folks fresh from the React class who develop a Node/Express application, put console.log() debugging statements in, and go to the browser console to see them.
 
-You should have set up your `node-homework` repository and folder.  In the terminal, cd to that folder and start VSCode.  Create a first.js file in the assignment1 directory, with a console.log() statement in it.  Start a VSCode terminal, and type "node ./assignment1/first".  You do not have to give the `.js` extension.  Ok, so much for the very simple stuff.
+You should have set up your `node-homework` repository and folder.  In the terminal, cd to that folder and start VSCode.  Create a first.js file in the assignment1 directory, with a console.log() statement in it.  Start a VSCode terminal, and type "node ./assignment1/first".  This is how you tell Node to start a program you write.  You do not have to give the `.js` extension.  Ok, so much for the very simple stuff.
 
 ## **4.3 Syntax Differences between Node and Browser Based JavaScript**
 
