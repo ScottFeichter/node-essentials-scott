@@ -6,11 +6,9 @@
 **Topics**:
 
 1. Event Emitters and Listeners.
-2. The syntax, verbs, and clauses of the SQL language: SELECT, INSERT, UPDATE, DELETE, and table management.
-3. Practicing SQL from a command line environment
-4. More on JOINs.
-5. BEGIN, COMMIT, and RETURNING.
-6. SQL from a Node program.
+2. A Simple HTTP Server
+3. Testing with Postman
+4. Introducing Express
 
 ## **2.1 Event Emitters and Listeners**
 
@@ -138,7 +136,7 @@ This is one perfectly valid way of creating a web application back end.  Your se
 
 ## **2.4 Introducing Express**
 
-Express is not part of the Node base.  You need to do an `npm install express` while in your node-homework folder.  Express may already be part of your node-homework repository, but install it to be sure.
+Express is not part of the Node base.  You need to do an `npm install express` while in your node-homework folder.  Express may already be part of your node-homework repository, but install it to be sure.  We are going to use Express to create a back end, a series of REST APIs.  Express can be used for other purposes, such as static file serving, or for server side rendered pages.  Server side rendering provides dynamic HTML using a templating language such as EJS or Pug.  We won't be doing that, and there are other more modern frameworks for server side rendered pages, such as JSX with NextJS.
 
 In the previous section on REST and HTTP, you learned about the components of an HTTP request: a method (such as GET, POST, PUT, PATCH, or DELETE), a path, query parameters, headers, sometimes a body, and cookies.  In Express, you have the following elements:
 
