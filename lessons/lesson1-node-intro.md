@@ -15,7 +15,7 @@
 
 ## **4.1 What is Node**
 
-The JavaScript language was created to run inside the browser, so as to create rich and responsive web applications.  It is an interpreted language that is platform independent, running on Mac, Linux, Windows, and other platforms.  Browser side JavaScript runs in a sandbox.  The code you load from the Internet, can't be trusted, so there are things that JavaScript isn't allowed to do when running in the browser, like accessing the local file system or opening a server side socket. To provide security protections, browser side JavaScript runs in a sandbox, a protected area that blocks off various functions.
+The JavaScript language was created to run inside the browser, so as to create rich and responsive web applications.  It is an interpreted language that is platform independent, running on Mac, Linux, Windows, and other platforms.  Browser side JavaScript runs in a sandbox.  The code you run in the browser is loaded from the Internet and can't be trusted, so there are things that JavaScript isn't allowed to do when running in the browser, like accessing the local file system or opening a server side socket. To provide security protections, browser side JavaScript runs in a sandbox, a protected area that blocks off various functions.
 
 A while back, some folks at Google had the thought: There are a lot of JavaScript programmers.  Wouldn't it be nice if they could write server side code in JavaScript? Wouldn't it be nice if they could develop web application servers in JavaScript?  At the time, the other leading platform independent language was Java, a far more complicated language.
 
@@ -92,7 +92,7 @@ The variables you declare inside of a node module are available only within that
 global.userName = "Joan";
 ```
 
-The latter is usually a bad practice.  Be careful about exporting non-constant values from a module.  If these change, the modules that access them via require() won't get the new values.  On the other hand, if you export a constant object, any module with access can mutate that object, and all other modules do see the new values within the object.  The same is true if you export a constant array.
+The latter is usually a bad practice.  Don't export non-constant values from a module.  If these values change, the modules that access them via require() won't get the new values.  On the other hand, if you export a constant object, any module with access can mutate that object, and all other modules do see the new values within the object.  The same is true if you export a constant array.
 
 On the Node side: You also have file system access, process information and control, local operating system services, and networking APIs.  The last is important.  You can open a web server socket in Node.  You can't do these things in browser side JavaScript, because they are forbidden by the browser sandbox protections, and because the APIs don't exist there.  You can also start Node programs with command line arguments.  You can also read input from and write output to a terminal session.  There are an extensive series of publicly available libraries for Node, such as Express, and many others you will use in this class.  For example, there is NodeGui, which allows you to write native graphical user interfaces without any involvement of a browser -- but we won't use that one in this class.
 
@@ -104,7 +104,7 @@ You have used npm to do package management for your React project.  We will also
 
 ## **4.5 File System Access with Async Operations**
 
-As we've said, Node let's you access the file system.  The functions you use are documented here: [https://nodejs.org/api/fs.html](https://nodejs.org/api/fs.html).  The base functions of this package require callbacks
+As we've said, Node let's you access the file system.  The functions you use are documented here: [https://nodejs.org/api/fs.html](https://nodejs.org/api/fs.html).  The base functions of this package require callbacks:
 
 ```js
 const fs = require("fs");
@@ -119,7 +119,7 @@ fs.open("./tmp/file.txt", "w", (err, fileHandle) => {
 console.log("last statement");
 ```
 
-What order do you think the logged lines will appear on running this file?  The answer is that you will see "last statement" printed first, followed by "file open succeeded."  The asynchronous fs.open() call just tells the Node event loop to do the open, and continues on to output "last statement".  Then the event loop completes the file open and does the callback.  And then you see the other message.
+What order do you think the logged lines will appear when your run this program?  The answer is that you will see "last statement" printed first, followed by "file open succeeded."  The asynchronous fs.open() call just tells the Node event loop to do the open and continues on to output "last statement".  Then the event loop completes the file open and does the callback.  And then you see the other message.
 
 Now, clearly, if you were to write a line to this file, you'd have to do it in the callback, so that you have access to the file handle.  That call would also be asynchronous, with a callback.  If you want to write a second line, you'd have to do that write in the second callback.  And so on, to "callback hell".  You could keep your file legible through clever use of recursion, but it's still messy.  Now, as you know, we have promises in JavaScript.  So, one choice would be to wrap the async call in a promise, as follows:
 
@@ -150,7 +150,7 @@ Fortunately, most Node functions do support promises.  So, you can do:
 ```js
 const fs = require("fs/promises"); // get the promise enabled version of the API
 
-const doFileOperations = async () => {
+const doFileOperations = async () => { // you can't use await in mainline code, so you need this
   const fileHandle = await fs.open("./tmp/file.txt", "w");
 }
 
@@ -173,7 +173,7 @@ function fnWithCallback(arg1, arg2, arg3, (err, return)) {
 }
 ```
 
-The arguments may be required or optional, but the last argument is required.  That's for the callback, and it has to return err as the first parameter and the return value as the second parameter.  You can do:
+The arguments may be required or optional, but the last argument is required.  That's for the callback, and it has to pass err as the first parameter and the return value as the second parameter.  You can do:
 
 ```js
 const { promisify } = require("util");
