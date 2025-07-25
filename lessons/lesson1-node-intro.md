@@ -104,7 +104,15 @@ You have used npm to do package management for your React project.  We will also
 
 ## **4.5 File System Access with Async Operations**
 
-As we've said, Node let's you access the file system.  The functions you use are documented here: [https://nodejs.org/api/fs.html](https://nodejs.org/api/fs.html).  The base functions of this package require callbacks:
+As we've said, Node let's you access the file system.  The functions you use are documented here: [https://nodejs.org/api/fs.html](https://nodejs.org/api/fs.html).  You will see some synchronous file access functions.  You could, for example, do:
+
+```js
+const fileHandle = fs.openSync("./tmp/file.txt", "w);
+```
+
+You might call such functions if you are doing some scripting on the server.  But you would never do this in a web application.  While the synchronous call is occurring, not only would the originator of the HTTP request have to wait, all requests coming to your application server would have to wait, which is not acceptable.
+
+The base functions of the file system package require callbacks:
 
 ```js
 const fs = require("fs");
@@ -145,7 +153,7 @@ try {
 
 Please look carefully at how this is done.  You will need to do it from time to time, because some functions that you will need to use only support callbacks.  The wrappering isn't very hard.  Every time you do the wrapper, it looks just the same.  You do need the try/catch once you wrapper the function.  Of course, the advantage is that subsequent file operations, also wrappered the same way, could be added without having to create a nested series of callbacks.  Be careful when you create such a wrapper.  The callback inside your wrapper must always call resolve() or reject(), or your process hangs.
 
-Fortunately, most Node functions do support promises.  So, you can do:
+Fortunately, most Node functions do support promises.  There are promise based versions of all the file system functions.  So, you can do:
 
 ```js
 const fs = require("fs/promises"); // get the promise enabled version of the API
