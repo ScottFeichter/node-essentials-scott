@@ -157,7 +157,11 @@ Here's a spec.
 
 4. You test with Postman to make sure all of this works.
 
-For the rest of this assignment, you'll set your app aside for a moment, and learn some debugging skills.git s
+There is a TDD test for this lesson.  Run `npm run tdd assignment3a`
+
+For the rest of this assignment, you'll set your app aside for a moment, and learn some debugging skills.
+
+
 
 ## **Task 2: Debugging Middleware**
 
@@ -182,7 +186,7 @@ The dogs are counting on you.
 
 2. To run the provided framework enter "npm run week3".  You do this before you start Postman testing.
 
-3. To run the test, enter "npm run tdd assignment3".  Your task is to make the tests pass.
+3. To run the test, enter "npm run tdd assignment3b".  Your task is to make the tests pass.
 
 4. In **Postman**, set up the following routes.  They should all be in one collection called "dogs":
 
@@ -231,7 +235,7 @@ Your work will involve editing `app.js` to add the expected middleware. Do **not
 
 ### Checking Your Work
 
-You start the server for this exercise with `npm run week3`.  You stop it with a Ctrl-C.  You run `npm run tdd week3` to run the test for this exercise.  Also use Postman to test.  Confirm the responses in Postman and the logs in your server terminal match the expectations in the deliverables.
+You start the server for this exercise with `npm run week3`.  You stop it with a Ctrl-C.  You run `npm run tdd assignment3b` to run the test for this exercise.  Also use Postman to test.  Confirm the responses in Postman and the logs in your server terminal match the expectations in the deliverables.
 
 ## **Submit Your Assignment on GitHub**
 
