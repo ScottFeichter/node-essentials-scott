@@ -184,7 +184,8 @@ Within your test folder, create a file called `taskController.test.js`.  This sh
 
 ```js
 require("dotenv").config();
-const { PrismaClient } = require("@prisma/client");
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL; // point to the test database!
+const prisma = require("../db/prisma");
 const { createUser } = require("../services/userService");
 const httpMocks = require("node-mocks-http");
 const {
@@ -221,7 +222,6 @@ You could specify these outside any `describe()` stanza, in which case they appl
 ```js
 beforeAll(async () => {
   // clear database
-  const prisma = new PrismaClient();
   await prisma.Task.deleteMany(); // delete all tasks
   await prisma.User.deleteMany(); // delete all users
   user1 = await createUser({
@@ -234,13 +234,16 @@ beforeAll(async () => {
     password: "Pa$$word20",
     name: "Alice",
   });
-  prisma.$disconnect();
 });
+
+afterAll(() => {
+  prisma.$disconnect();
+})
 ```
 
 Clearly you would not want to do this step unless you are pointing to the test database.  When you pass a function to `beforeAll()` or `it()` or other jest functions, you can declare it as async so that you can use await.  It is important to do the prisma.$disconnect().  If not, Jest may not terminate cleanly, and you might have a zombie process.
 
-Why do we need the user records? Each task record has a foreign key, the userId.  If this is not provided or if it doesn't correspond to a real user record, you get a constraint violation from the database.
+Why do we need the user records? Each task record has a foreign key, the userId.  If this is not provided or if it doesn't correspond to a real user record, you get a constraint violation from the database.  It is very important to disconnect from the database at the completion of the test to avoid a hung process.
 
 There are some special issues when testing route handlers and middleware functions.  They take the parameters `req`, `res`, and sometimes `next`.  For the req and res, we use the `node-http-mocks` package.  You can configure the mock req object with the content you are testing: body, query parameters, headers, path parameters, whatever.  Then you call the function to be tested, to see if the result is as you expect.
 
@@ -402,8 +405,9 @@ Create another file in the test directory called `user.controller.test.js`.  Thi
 
 ```js
 require("dotenv").config();
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 const waitForRouteHandlerCompletion = require("./waitForRouteHandlerCompletion");
-const { PrismaClient } = require("@prisma/client");
+const prisma = require("../db/prisma");
 const { createUser } = require("../services/userService");
 const httpMocks = require("node-mocks-http");
 const { register, logoff } = require("../controllers/userController");
@@ -430,7 +434,6 @@ function MockResponseWithCookies({eventEmitter: EventEmitter}) {
 
 beforeAll(async () => {
   // clear database
-  const prisma = new PrismaClient();
   await prisma.Task.deleteMany(); // delete all tasks
   await prisma.User.deleteMany(); // delete all users
   await createUser({
@@ -438,8 +441,12 @@ beforeAll(async () => {
     password: "Pa$$word20",
     name: "Bob",
   });
+});
+
+afterAll(() => {
   prisma.$disconnect();
 });
+
 let jwtCookie;
 ```
 
@@ -523,28 +530,27 @@ The new test file should start out as follows:
 require("dotenv").config();
 const request = require("supertest");
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
-const { PrismaClient } = require("@prisma/client");
+const prisma = require("../db/prisma");
 let agent;
 let saveRes;
 const { app, server } = require("../app");
 
 beforeAll(async () => {
   // clear database
-  const prisma = new PrismaClient();
   await prisma.Task.deleteMany(); // delete all tasks
-  await prisma.User.deleteMany(); // delete all users
-  prisma.$disconnect();
+  await prisma.User.deleteMany(); // delete all users 
   agent = request.agent(app);
 });
 
 afterAll(async () => {
+  prisma.$disconnect();
   server.close();
 });
 ```
 
 Let's explain this code.  As usual, we load the environment variables we need, and make sure we are pointing to the test database from the start.  We are using cookie based security, so we have to keep track of the cookies.  Fortunately, the supertest agent does that for us.  We configure the agent with the app so that the actual operations can be sent to the app.  As usual, we clean the database.
 
-**It is very important to stop the server at the end of the test.**  If this doesn't occur, your app could be left as a zombie process, and that's a mess.  That's why the server value is exported from your app.
+**It is very important to stop the server at the end of the test, using server.close().**  If this doesn't occur, your app could be left as a zombie process, and that's a mess.  That's why the server value is exported from your app.  
 
 Now for the first test of this type:
 
@@ -605,7 +611,7 @@ Hint: The logoff route is protected.  What do you need to put in the request hea
 Then verify that all your tests run without error.  If you want to run just this test, you can do:
 
 ```bash
-NODE_ENV=test npx jest test/user.function.test.js
+npx jest test/user.function.test.js
 ```
 
 Also, run the TDD (test of the tests) command, if you haven't recently, to see if it identifies any problems with your tests.
@@ -650,7 +656,7 @@ Even when you do have comprehensive code coverage, the tests may be, and this ca
 
 ## **Runnng the Test of the Tests**
 
-To be done.  Not sure if I'll really do this.
+To run the TDD for assignment 9, run `npm run lesson9TDD` .  You should get test failures.  Mock versions of some of your JavaScript files are used, with intentionally introduced bugs.  On completion, you should see whether your tests found all the bugs.  This is not a complete test of your tests.  The report at the end will show whether your tests gave the expected results.
 
 ## **Submit Your Assignment on GitHub**
 
