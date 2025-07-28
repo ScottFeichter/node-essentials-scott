@@ -159,7 +159,7 @@ const logonRouteHandler = async (req, res, next) => {
 };
 ```
 
-Because the callback is not wrappered in a promise, we **must** catch the error if any is thrown.  No error can be thrown in this case, so we don't need a try/catch, but the callback might be passed an error.  If it is, we **must** call next(err) to pass the to the error handler, if the error isn't to be handled inside the route handler.  Otherwise the server process will crash with an unhandled exception.  Note: For this style of callback handling, when `await logonRouteHandler(req, res, next);` returns, the response hasn't been sent yet.  We'll need to handle that problem when testing.  Note also that for this style, the route handler has to have a next parameter passed. 
+Because the callback is not wrappered in a promise, we **must** catch the error if any is thrown.  No error can be thrown in this case, so we don't need a try/catch, but the callback might be passed an error.  If it is, we **must** call next(err) instead of throwing the error, if we are to pass the error to the error handler.  If an error is thrown in from the callback, the server process will crash with an unhandled exception.  Note: For this style of callback handling, when `await logonRouteHandler(req, res, next);` returns, the response hasn't been sent yet.  We'll need to handle that problem when testing.  Note also that for this style, the route handler has to have a next parameter passed. 
 
 Finally, we have to include the csrfToken in what is sent back to the front end.  For CSRF protection, the front end has to include this token in each subsequent request.  We will put it in the X-CSRF-TOKEN header.
 
