@@ -54,7 +54,7 @@ passport.use(
 
 The first argument passed, which is optional, is nowhere documented in Passport. This is, ahem, bad. That first object tells passport which values from a req object are to be used for authentication. The defaults are "username" and "password", but we are using "email" and "password", and we have to tell passport that, a fact which the developers elected not to disclose.  So, please try to remember this for the future.  
 
-The second argument is a function.  You are telling the passport local strategy to call this function at authentication time, so that you can do the authentication.  Your function, which might be async, is going to be passed the email, the password, and a callback.  Inside the function, you do the actual validation, using the verifyUserPassword function created previously.  Once the validation returns, you report the result via the callback.  The first argument to the callback is the error, if one was thrown, or null otherwise.  The second argument is the user object you got back from verifyUserPassword, if the verification succeeded, or null if it didn't, in which case you can also pass back a message.
+The second argument is a callback.  You are telling the passport local strategy to call this function at authentication time, so that you can do the authentication.  Your function, which might be async, is going to be passed the email, the password, and a callback.  Inside the function, you do the actual validation, using the verifyUserPassword function created previously.  Once the validation returns, you report the result via the callback.  The first argument to the callback is the error, if one was thrown, or null otherwise.  The second argument is the user object you got back from verifyUserPassword, if the verification succeeded, or null if it didn't, in which case you can also pass back a message.
 
 The verifyUserPassword function might throw an error, for example if the database is down. In this case, is very important to catch this error if it is thrown.  You will be in a callback from an Express route handler at this point.  An error thrown from within a callback crashes the Express server.
 
@@ -110,15 +110,11 @@ const setJwtCookie = (req, res, user) => {
 
 const logonRouteHandler = async (req, res, next) => {
   let user;
-  try {
-    user = await new Promise((resolve, reject) => {
-      passport.authenticate("local", { session: false }, (err, user) => {
-        return err ? reject(err) : resolve(user);
-      })(req, res);
-    });
-  } catch (err) {
-    return next(err);
-  }
+  user = await new Promise((resolve, reject) => {
+    passport.authenticate("local", { session: false }, (err, user) => {
+      return err ? reject(err) : resolve(user);
+    })(req, res);
+  });
   if (!user) {
     res
       .status(StatusCodes.UNAUTHORIZED)
@@ -140,9 +136,9 @@ Because no one else has the secret, no one else can create a cookie the server w
 
 **However:** In the development environment, setting up HTTPS for your server is messy.  If you don't have HTTPS, Chrome and other browsers will discard any cookie with the secure flag set.  And if the secure flag is not set, browsers won't accept cookies with the domain set, or with SameSite: "None".  So, in the development environment, SameSite is set to "Lax", and the secure flag and the domain are not set for the cookie.  Now, if we turn these flags off, the browsers won't accept a cross-site cookie.  So, we set up the environment so that the browser doesn't know that it is a cross-site connection.  We'll use the Vite proxy for that in a later lesson.  Postman has the same limitations as the browsers do as far as what kind of cookie can be set without HTTPS.  But because Postman is not a browser, it doesn't know if a cookie is a cross-site cookie.  So that works too.
 
-At logon time, the logon route handler calls passport.authenticate to get the middleware function for the "local" strategy.  It then calls that middleware, and provides a callback.  In the code above, that callback is wrapped in a promise.  This is not really necessary -- we could do subsequent processing in the callback itself.  When the passport middleware function does the callback, it might return an error, for example if the database is down.  We have to call either resolve() or reject(), else the promise is never resolved and the server hangs.  So we call reject() for the error case. Important! **We must catch this error, and call next(err).**  If the error is thrown from a callback, that would crash the server.  Your error handler will not catch the error because it happens in a callback.  Instead, we call next(err).  This calls the error handler.  
+At logon time, the logon route handler calls passport.authenticate to get the middleware function for the "local" strategy.  It then calls that middleware, and provides a callback.  In the code above, that callback is wrapped in a promise.  This is one of two styles for handling callbacks.  When the passport middleware function does the callback, it might return an error, for example if the database is down.  We have to call either resolve() or reject(), else the promise is never resolved and the server hangs.  So we call reject() for the error case.  The reject causes an error to be thrown and the await to complete.  We do not have to catch this error, because it doesn't happen inside callback.  The error handler will catch it.
 
-The use of the promise above is just for illustration.  We can make this code cleaner as follows:
+Style two for handling the callback is as follows:
 
 ```js
 const logonRouteHandler = async (req, res, next) => {
@@ -163,7 +159,7 @@ const logonRouteHandler = async (req, res, next) => {
 };
 ```
 
-Note, in this case, that when `await logonRouteHandler(req, res, next);` returns, the response hasn't been sent yet.  We'll need to handle that problem when testing.  Note also that this route handler has to have a next parameter passed. 
+Because the callback is not wrappered in a promise, we **must** catch the error, and we **must** call next(err) to pass it to the error handler.  Otherwise the server process will crash with an unhandled exception.  Note: For this style of callback handling, when `await logonRouteHandler(req, res, next);` returns, the response hasn't been sent yet.  We'll need to handle that problem when testing.  Note also that this route handler has to have a next parameter passed. 
 
 Finally, we have to include the csrfToken in what is sent back to the front end.  For CSRF protection, the front end has to include this token in each subsequent request.  We will put it in the X-CSRF-TOKEN header.
 
@@ -345,7 +341,7 @@ Whew, just about done.
 
 ## **Run the TDD Test**
 
-Run `npm run tdd assignment8` to make sure all the tests work.
+Run `npm run tdd assignment8` to make sure all the tests work.  Then, stop your postgresql service, and from Postman, try a logon request.  You should see an Internal Server Error reported, and you should see in your server console a log record that connection to the database failed -- but the server process should not crash.
 
 ## **Submit Your Assignment on GitHub**
 
