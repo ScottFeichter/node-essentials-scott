@@ -73,7 +73,7 @@ module.exports = { add, multiply }
 
 The ESM syntax is also supported in Node.  In that case, you use files with extension `.mjs`.  However, **we will use CJS in this course.**  So get used to doing `require`.  By the way, combining ESM and CJS in one project is a messy business, but it can be done.  We won't be doing that.
 
-## **4.4 Other Important Differnces between Node and Browser JavaScript**
+## **4.4 Other Important Differences between Node and Browser JavaScript**
 
 In browser side JavaScript, you always have access to the window and document objects, and through them, you have access to the DOM.  For Node, there is no window, no document, and no DOM.
 
@@ -84,7 +84,7 @@ What you have instead in Node is a global object. This includes the following at
 - __filename: The fully qualified filename of the current module.
 - console: console.log() is available, just as it is in client side JavaScript.
 - module: This is not actually a global, because each module in the program has a different module object. The fully qualified filename of the current module is in `module.name`.  `module.exports` contains the variable from the module that is exported and is returned when another module does a require() for this one. This might be a function, a value, or, often, an object with various functions and/or values. 
-- require(): Used to get access to exports from other modules.  If a module calls `require("http")`, it is loading the library called http from Node or from one of the packages installed using npm.  If a module calls `require("../utils/parser")`, it is loading the `../utils/parser.js` module, where the pathname is relative to the current module.  Also, if `require.name` equals the current module, the current module is the one that was started by node.
+- require(): Used to get access to exports from other modules.  If a module calls `require("http")`, it is loadig the built-in Node.js module called http. If the module name isn't built-in, Node.js will then look for it in the installed npm packages. If a module calls `require("../utils/parser")`, it is loading the `../utils/parser.js` module, where the pathname is relative to the current module.  Also, if `require.main` equals the current module, the current module is the one that was started by node.
 
 The variables you declare inside of a node module are available only within that module, unless you export them, or unless you attach them to the global object, like:
 
@@ -107,7 +107,7 @@ You have used npm to do package management for your React project.  We will also
 As we've said, Node let's you access the file system.  The functions you use are documented here: [https://nodejs.org/api/fs.html](https://nodejs.org/api/fs.html).  You will see some synchronous file access functions.  You could, for example, do:
 
 ```js
-const fileHandle = fs.openSync("./tmp/file.txt", "w);
+const fileHandle = fs.openSync("./tmp/file.txt", "w");
 ```
 
 You might call such functions if you are doing some scripting on the server.  But you would never do this in a web application.  While the synchronous call is occurring, not only would the originator of the HTTP request have to wait, all requests coming to your application server would have to wait, which is not acceptable.
