@@ -59,7 +59,7 @@ Read [this summary of the concepts](https://www.functionize.com/automated-testin
 
 2. Test cases will be run:
 
-   - As the code is written.  These may be provided ahead of time, if the shop uses a test driven development approach, but each developer of the product code will alse write and run additional tests, especially unit tests.
+   - As the code is written.  These may be provided ahead of time, if the shop uses a test driven development approach, but each developer of the product code will also write and run additional tests, especially unit tests.
    - As the code is submitted for a PR.  The continuous integration process may block the PR until tests pass.
    - As the PR is reviewed.  The reviewer will check to see that the provided tests are adequate and that they pass.
    - As the change is integrated into the product code.
@@ -68,7 +68,7 @@ Read [this summary of the concepts](https://www.functionize.com/automated-testin
 
 ## **9.4 The `jest` and `supertest` Packages**
 
-Depending on the languages and frameworks used by the project, different testing packages may be used.  You are developing in JavaScript, React, and Express.  The `jest` package [here](https://www.npmjs.com/package/jest) is commonly used for this kind of project.  
+Depending on the languages and frameworks used by the project, different testing packages may be used.  You are developing using JavaScript, React, and Express.  The `jest` package [here](https://www.npmjs.com/package/jest) is commonly used for this kind of project.  
 
 A Jest test invokes product code in various ways, typically by requiring the module that contains the function to be tested and then invoking that function.  The `expect()` function is used to evaluate whether the correct result is returned.  Test cases may be grouped using the `describe()` function, which may group invocations to the `it()` or `test()` methods.  Each of these tests and groups is given a title, so that it is evident what has been tested or what failed.  Test cases can fail two ways: An `expect()` assertion may fail, or an error may be thrown.  In either case, that ends the processing for that test.  Jest can also test a React front end, to see that user interaction with that front end gives the desired results.  We won't do front end testing for this assignment.  A jest test file, which should end with `.test.js`, might look something like this:
 
@@ -77,9 +77,9 @@ const {fnA, fnB} = require("../codeFolder/someModule"); // The module to test
 
 describe("Tests for someModule", ()=>{
    it("should return false when fnA is passed 'thisValue'", () => {
-      expect.(fnA("thisValue")).toBe(false);
+      expect(fnA("thisValue")).toBe(false);
    });
-   it("should return an object with {name: `Lakshmi`,isEnrolled: { boolean }} when fnB is called, with no error", async ()={
+   it("should return an object with {name: `Lakshmi`,isEnrolled: { boolean }} when fnB is called, with no error", async () => {
       const retValue = await fnB(437);
       expect(retValue.name).toBe("Lakshmi");
       expect(retValue.error).not.toBeDefined();
