@@ -1,16 +1,145 @@
 # Lesson 7: Advanced Prisma ORM Features
 
+## Prerequisites: What You Should Have from Lesson 6b
+
+Before starting this lesson, ensure you have completed Lesson 6b and have the following setup:
+
+### Database Schema
+Your PostgreSQL database should have these tables (created via Prisma schema):
+
+```sql
+-- Users table
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(30) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tasks table with foreign key relationship
+CREATE TABLE tasks (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  is_completed BOOLEAN DEFAULT FALSE,
+  user_id INTEGER REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Prisma Schema File
+Your `prisma/schema.prisma` should look like this:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  password  String
+  tasks     Task[]
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  isCompleted Boolean  @default(false) @map("is_completed")
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("tasks")
+}
+```
+
+### Sample Data
+Your database should contain some test data to practice with:
+
+**Users:**
+- At least 2-3 users with different names and emails
+- Think of them as test accounts you can use to practice
+
+**Tasks:**
+- Each user should have a few tasks
+- Mix of completed and incomplete tasks
+- Various task titles for testing search and filtering
+
+### Working API Endpoints
+Your existing app should have these endpoints working:
+
+- `POST /api/users/register` - User registration
+- `POST /api/users/login` - User authentication
+- `GET /api/tasks?user_id=X` - Get user's tasks
+- `POST /api/tasks?user_id=X` - Create new task
+- `PATCH /api/tasks/:id?user_id=X` - Update task
+- `DELETE /api/tasks/:id?user_id=X` - Delete task
+
+### Project Structure
+Your project should look like this:
+
+```
+project/
+├── controllers/
+│   ├── userController.js
+│   └── taskController.js
+├── routes/
+│   ├── userRoutes.js
+│   └── taskRoutes.js
+├── prisma/
+│   ├── schema.prisma
+│   └── db.js
+├── app.js
+├── .env
+└── package.json
+```
+
+### Environment Configuration
+Your `.env` file should contain:
+
+```env
+DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/yourdatabase"
+PORT=3000
+```
+
+### What You Should Be Able to Do
+Before proceeding with Lesson 7, you should be able to:
+1. Start your server with `npm start`
+2. Connect to your PostgreSQL database
+3. Create, read, update, and delete users and tasks
+4. Test all endpoints with Postman or similar tools
+5. See data being stored and retrieved from the database
+
+**If any of these are not working, please complete Lesson 6b first or ask for help with the setup.**
+
+---
+
 ## Overview
 Building on your Prisma ORM knowledge from Lesson 6b, this lesson explores **Advanced Prisma features** that will make your database operations more powerful and efficient. You'll learn how to handle complex queries, optimize performance, and work with advanced database patterns.
 
 **What You'll Learn:**
-- Eager loading and relation handling (LEFT JOIN equivalents)
-- Advanced querying with groupBy and aggregations
-- Database transactions for data consistency
-- Batch operations for better performance
-- Raw SQL with $queryRaw when needed
-- Performance optimization techniques
-- Security best practices
+- **Eager loading and relation handling (LEFT JOIN equivalents)**: Learn how to fetch related data in a single query instead of making multiple database calls. Use this when you need to display a user's profile along with their recent tasks, or when building dashboard views that show multiple related pieces of information.
+
+- **Advanced querying with groupBy and aggregations**: Discover how to analyze your data for insights and reporting. Use groupBy when you want to count how many tasks each user has completed, calculate completion rates, or generate statistics for analytics dashboards.
+
+- **Database transactions for data consistency**: Learn how to ensure multiple database operations either all succeed or all fail together. Use transactions when creating a user account and their initial settings, or when updating multiple related records that must stay in sync.
+
+- **Batch operations for better performance**: Master techniques for handling multiple records efficiently. Use batch operations when importing data, bulk updating user preferences, or processing large datasets without overwhelming your database.
+
+- **Raw SQL with $queryRaw when needed**: Understand when Prisma's built-in features aren't enough and how to safely use raw SQL. Use $queryRaw for complex searches across multiple fields, custom aggregations, or database-specific features that Prisma doesn't support.
+
+- **Performance optimization techniques**: Learn how to make your database queries faster and more efficient. Use these techniques when your app starts getting slower with more users, or when you need to handle larger amounts of data without performance degradation.
+
+- **Security best practices**: Master techniques to keep your database safe from attacks. Use these practices in production applications to prevent SQL injection, secure sensitive data, and maintain user privacy.
 
 ---
 
@@ -341,11 +470,86 @@ const query = `SELECT * FROM users WHERE email = '${email}'`;
 const result = await prisma.$queryRawUnsafe(query);
 ```
 
-**SQL Injection Prevention:**
-- **Always use parameterized queries**
-- **Never concatenate user input directly into SQL strings**
-- **Use Prisma's built-in methods when possible**
-- **Validate and sanitize all inputs**
+### c. SQL Injection Prevention
+**❌ DANGEROUS - Never do this:**
+```javascript
+// DON'T: Direct string concatenation
+const query = `SELECT * FROM users WHERE email = '${email}'`;
+const result = await prisma.$queryRawUnsafe(query);
+```
+
+**✅ SAFE - Use parameterized queries:**
+```javascript
+// DO: Use template literals with $queryRaw
+const result = await prisma.$queryRaw`
+  SELECT * FROM users WHERE email = ${email}
+`;
+
+// DO: Use $queryRawUnsafe with parameters
+const result = await prisma.$queryRawUnsafe(
+  'SELECT * FROM users WHERE email = $1',
+  [email]
+);
+```
+
+**Why SQL Injection is Dangerous:**
+
+**What is SQL Injection?**
+SQL injection is when an attacker tricks your app into running malicious SQL code instead of the intended query. This happens when user input is directly inserted into SQL strings without proper sanitization.
+
+**Real Attack Examples:**
+
+**Example 1: Data Theft**
+```javascript
+// Attacker enters this as email: ' OR 1=1; --
+// Your unsafe query becomes:
+// SELECT * FROM users WHERE email = '' OR 1=1; --'
+// This returns ALL users in your database!
+```
+
+**Example 2: Database Destruction**
+```javascript
+// Attacker enters this as email: '; DROP TABLE users; --
+// Your unsafe query becomes:
+// SELECT * FROM users WHERE email = ''; DROP TABLE users; --'
+// This deletes your entire users table!
+```
+
+**Example 3: Admin Access**
+```javascript
+// Attacker enters this as email: ' OR email = 'admin@company.com' OR '1'='1
+// Your unsafe query becomes:
+// SELECT * FROM users WHERE email = '' OR email = 'admin@company.com' OR '1'='1'
+// This gives the attacker access to admin accounts!
+```
+
+**What Attackers Can Do:**
+- **Steal all your data**: Read every user record, password, personal information
+- **Modify your data**: Change prices, user permissions, or delete records
+- **Destroy your database**: Drop tables, corrupt data, or crash your app
+- **Access other systems**: If your database has network access, attackers might reach other servers
+- **Steal user accounts**: Get admin access, impersonate users, or reset passwords
+
+**Real-World Consequences:**
+- **Financial Loss**: Stolen customer data, fraudulent transactions
+- **Legal Issues**: Data breach lawsuits, regulatory fines (GDPR, HIPAA)
+- **Reputation Damage**: Loss of customer trust, negative publicity
+- **Business Disruption**: App downtime, data recovery costs
+- **Identity Theft**: Stolen user credentials used for fraud
+
+**How Attackers Find Vulnerabilities:**
+- **Automated scanning**: Bots constantly test websites for common vulnerabilities
+- **Manual testing**: Hackers try different inputs to see how your app responds
+- **Error messages**: Database errors that reveal your table structure
+- **Public information**: Code repositories, documentation, or forum posts
+
+**Why Parameterized Queries Work:**
+- **Separation**: User input is treated as data, not code
+- **Database protection**: The database engine handles the input safely
+- **Type safety**: Input is properly escaped and validated
+- **No code execution**: User input can never become executable SQL
+
+**Remember:** SQL injection is one of the most dangerous web vulnerabilities. Always use parameterized queries, never concatenate user input directly into SQL strings, and validate all inputs before using them in database operations.
 
 ---
 

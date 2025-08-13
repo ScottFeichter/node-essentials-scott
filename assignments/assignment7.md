@@ -63,6 +63,33 @@ Create `GET /api/users` endpoint that shows all users with their task statistics
 - Implement pagination (limit to 10 users per page)
 - Exclude sensitive information like passwords
 
+**Expected Response:**
+```json
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "_count": { "tasks": 8 },
+      "pendingTasks": [
+        {
+          "id": 3,
+          "title": "Learn Prisma",
+          "isCompleted": false
+        }
+      ]
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 2,
+    "totalUsers": 15,
+    "usersPerPage": 10
+  }
+}
+```
+
 ### 2. Advanced Query Implementation
 
 #### a. Complex Task Filtering
@@ -81,6 +108,35 @@ Enhance your existing `GET /api/tasks` endpoint to support advanced filtering:
 - Implement proper input validation
 - Use `select` to limit returned fields for performance
 - Add pagination support
+
+**Expected Response:**
+```json
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Learn Prisma ORM",
+      "isCompleted": false,
+      "createdAt": "2024-01-15T10:30:00Z",
+      "user": {
+        "id": 1,
+        "name": "John Doe"
+      }
+    }
+  ],
+  "filters": {
+    "status": "incomplete",
+    "search": "Prisma",
+    "dateRange": "last_week"
+  },
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 3,
+    "totalTasks": 25,
+    "tasksPerPage": 10
+  }
+}
+```
 
 #### b. Task Search with Raw SQL
 Create a new endpoint `GET /api/tasks/search` that uses `$queryRaw` for complex text search:
@@ -103,6 +159,25 @@ ORDER BY
   t.created_at DESC
 ```
 
+**Expected Response:**
+```json
+{
+  "searchResults": [
+    {
+      "id": 5,
+      "title": "Learn Prisma Advanced Features",
+      "isCompleted": false,
+      "createdAt": "2024-01-15T14:20:00Z",
+      "user_name": "John Doe",
+      "relevanceScore": 1
+    }
+  ],
+  "searchQuery": "Prisma",
+  "totalResults": 3,
+  "searchTime": "45ms"
+}
+```
+
 ### 3. Database Transactions
 
 #### a. User Registration with Welcome Tasks
@@ -115,6 +190,39 @@ Enhance your user registration to create initial tasks automatically:
 - If any operation fails, rollback everything
 - Return the created user with their welcome tasks
 
+**Expected Response:**
+```json
+{
+  "user": {
+    "id": 5,
+    "name": "Alice Smith",
+    "email": "alice@example.com",
+    "createdAt": "2024-01-15T16:00:00Z"
+  },
+  "welcomeTasks": [
+    {
+      "id": 20,
+      "title": "Complete your profile",
+      "isCompleted": false,
+      "userId": 5
+    },
+    {
+      "id": 21,
+      "title": "Add your first task",
+      "isCompleted": false,
+      "userId": 5
+    },
+    {
+      "id": 22,
+      "title": "Explore the app",
+      "isCompleted": false,
+      "userId": 5
+    }
+  ],
+  "transactionStatus": "success"
+}
+```
+
 #### b. Bulk Task Operations
 Implement `POST /api/tasks/bulk` for creating multiple tasks:
 
@@ -124,6 +232,29 @@ Implement `POST /api/tasks/bulk` for creating multiple tasks:
 - Validate all tasks before insertion
 - Return success count and any errors
 - Use transactions if you need to ensure all-or-nothing behavior
+
+**Expected Response:**
+```json
+{
+  "success": {
+    "createdCount": 8,
+    "createdTasks": [
+      {
+        "id": 25,
+        "title": "Task 1",
+        "isCompleted": false,
+        "userId": 1
+      }
+    ]
+  },
+  "errors": [],
+  "summary": {
+    "totalSubmitted": 8,
+    "successfullyCreated": 8,
+    "failed": 0
+  }
+}
+```
 
 ### 4. Performance Optimization
 
@@ -136,6 +267,29 @@ Add pagination to all list endpoints:
 - Add pagination metadata to responses
 - Handle edge cases (invalid page numbers, empty results)
 
+**Expected Response:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "title": "Sample Task",
+      "isCompleted": false
+    }
+  ],
+  "pagination": {
+    "currentPage": 2,
+    "totalPages": 5,
+    "totalItems": 48,
+    "itemsPerPage": 10,
+    "hasNextPage": true,
+    "hasPreviousPage": true,
+    "nextPage": 3,
+    "previousPage": 1
+  }
+}
+```
+
 #### b. Selective Field Loading
 Optimize your existing endpoints to load only necessary fields:
 
@@ -144,6 +298,22 @@ Optimize your existing endpoints to load only necessary fields:
 - Implement different response schemas for different use cases
 - Add a `fields` query parameter to let clients specify which fields they need
 - Document the available field options
+
+**Expected Response:**
+```json
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "_count": { "tasks": 8 }
+    }
+  ],
+  "fieldsRequested": ["id", "name", "email", "taskCount"],
+  "availableFields": ["id", "name", "email", "createdAt", "taskCount"]
+}
+```
 
 ### 5. Error Handling and Validation
 
@@ -192,7 +362,6 @@ project/
 ### Code Quality Requirements
 - Use async/await consistently
 - Implement proper error handling
-- Add JSDoc comments for complex functions
 - Follow consistent naming conventions
 - Use environment variables for configuration
 
@@ -229,33 +398,36 @@ Test all new endpoints with Postman or similar tools:
 - Environment configuration
 - Clear documentation of new endpoints
 
-### Testing Documentation
-- Postman collection or curl commands for testing
-- Test results showing all endpoints working
-- Performance metrics (if applicable)
-- Any issues encountered and solutions
 
-### Bonus Challenges
-- Implement caching for analytics endpoints
-- Add real-time updates using WebSockets
-- Create a dashboard frontend for analytics
-- Implement advanced search with full-text search
-- Add task categories and tags
 
 ---
 
-## Grading Criteria
+## Submission Instructions
 
-| Criteria | Points | Description |
-|----------|--------|-------------|
-| **Analytics Implementation** | 25 | Working analytics endpoints with proper aggregations |
-| **Advanced Queries** | 25 | Complex filtering, search, and pagination |
-| **Transactions** | 20 | Proper transaction handling and error management |
-| **Performance** | 15 | Pagination, selective loading, and optimization |
-| **Code Quality** | 10 | Clean code, error handling, and documentation |
-| **Testing** | 5 | All endpoints tested and working |
+### 1️⃣ Add, Commit, and Push Your Changes
+Within your `node-homework` folder, do a git add and a git commit for the files you have created, so that they are added to the `assignment7` branch.
 
-**Total: 100 points**
+```bash
+git add .
+git commit -m "Complete Assignment 7: Advanced Prisma ORM Features"
+git push origin assignment7
+```
+
+### 2️⃣ Create a Pull Request
+1. Log on to your GitHub account
+2. Open your `node-homework` repository
+3. Select your `assignment7` branch. It should be one or several commits ahead of your main branch
+4. Create a pull request with a descriptive title like "Assignment 7: Advanced Prisma Features"
+
+### 3️⃣ Submit Your GitHub Link
+Your browser now has the link to your pull request. Copy that link, to be included in your homework submission form.
+
+**Important:** Make sure your pull request includes:
+- All the updated files from your existing Lesson 6b application
+- New analytics endpoints and advanced query implementations
+- Transaction handling and performance optimizations
+- Proper error handling and validation
+- All endpoints tested and working
 
 ---
 
