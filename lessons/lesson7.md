@@ -22,6 +22,7 @@ CREATE TABLE tasks (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   is_completed BOOLEAN DEFAULT FALSE,
+  priority VARCHAR(10) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
   user_id INTEGER REFERENCES users(id),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -54,6 +55,7 @@ model Task {
   id          Int      @id @default(autoincrement())
   title       String
   isCompleted Boolean  @default(false) @map("is_completed")
+  priority    String   @default("medium") // low, medium, high
   userId      Int      @map("user_id")
   user        User     @relation(fields: [userId], references: [id])
   createdAt   DateTime @default(now()) @map("created_at")
@@ -73,12 +75,14 @@ Your database should contain some test data to practice with:
 - Each user should have a few tasks
 - Mix of completed and incomplete tasks
 - Various task titles for testing search and filtering
+- Different priority levels (low, medium, high) for advanced filtering
 
 ### Working API Endpoints
 Your existing app should have these endpoints working:
 
 - `POST /api/users/register` - User registration
 - `POST /api/users/login` - User authentication
+- `GET /api/users/:id` - Get user by ID
 - `GET /api/tasks?user_id=X` - Get user's tasks
 - `POST /api/tasks?user_id=X` - Create new task
 - `PATCH /api/tasks/:id?user_id=X` - Update task
@@ -91,10 +95,12 @@ Your project should look like this:
 project/
 ├── controllers/
 │   ├── userController.js
-│   └── taskController.js
+│   ├── taskController.js
+│   └── analyticsController.js
 ├── routes/
 │   ├── userRoutes.js
-│   └── taskRoutes.js
+│   ├── taskRoutes.js
+│   └── analyticsRoutes.js
 ├── prisma/
 │   ├── schema.prisma
 │   └── db.js
@@ -232,6 +238,22 @@ const completionStats = await prisma.task.groupBy({
     id: true
   }
 });
+
+// Count tasks by priority level
+const priorityStats = await prisma.task.groupBy({
+  by: ['priority'],
+  _count: {
+    id: true
+  }
+});
+
+// Count tasks by priority AND completion status
+const priorityCompletionStats = await prisma.task.groupBy({
+  by: ['priority', 'isCompleted'],
+  _count: {
+    id: true
+  }
+});
 ```
 
 ### b. Advanced GroupBy with Multiple Fields
@@ -286,6 +308,74 @@ const userMetrics = await prisma.task.groupBy({
 - Analytics and reporting
 - Performance metrics
 - Data insights
+- Priority-based task management
+
+---
+
+## 2.5. Priority-Based Filtering and Management
+
+### a. Understanding Task Priorities
+The priority field allows you to categorize tasks by importance:
+- **High**: Urgent tasks that need immediate attention
+- **Medium**: Normal priority tasks (default)
+- **Low**: Tasks that can be done later
+
+### b. Priority-Based Queries
+```javascript
+// Get high-priority tasks for a user
+const highPriorityTasks = await prisma.task.findMany({
+  where: {
+    userId: 1,
+    priority: 'high',
+    isCompleted: false
+  },
+  orderBy: { createdAt: 'desc' }
+});
+
+// Get tasks grouped by priority
+const tasksByPriority = await prisma.task.groupBy({
+  by: ['priority'],
+  where: { userId: 1 },
+  _count: { id: true }
+});
+
+// Get overdue high-priority tasks
+const overdueHighPriority = await prisma.task.findMany({
+  where: {
+    userId: 1,
+    priority: 'high',
+    isCompleted: false,
+    createdAt: {
+      lte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Older than 7 days
+    }
+  }
+});
+```
+
+### c. Priority in Advanced Filtering
+```javascript
+// Complex filtering with priority
+const filteredTasks = await prisma.task.findMany({
+  where: {
+    userId: 1,
+    AND: [
+      { priority: { in: ['high', 'medium'] } },
+      { isCompleted: false },
+      { title: { contains: 'urgent', mode: 'insensitive' } }
+    ]
+  },
+  orderBy: [
+    { priority: 'desc' }, // High priority first
+    { createdAt: 'asc' }  // Then by creation date
+  ]
+});
+```
+
+**Priority Field Benefits:**
+- **Task Organization**: Categorize tasks by importance
+- **Advanced Filtering**: Filter by priority level
+- **Analytics**: Generate priority-based reports
+- **User Experience**: Help users focus on important tasks
 
 ---
 
@@ -551,7 +641,7 @@ SQL injection is when an attacker tricks your app into running malicious SQL cod
 
 **Remember:** SQL injection is one of the most dangerous web vulnerabilities. Always use parameterized queries, never concatenate user input directly into SQL strings, and validate all inputs before using them in database operations.
 
----
+
 
 ## 6. Performance Optimization
 
@@ -587,10 +677,10 @@ const tasks = await prisma.task.findMany({
   orderBy: { createdAt: 'desc' }
 });
 
-// Cursor-based pagination (more efficient for large datasets)
+// Basic pagination with take and skip 
 const tasks = await prisma.task.findMany({
   take: 20,
-  cursor: { id: lastTaskId },  // Start after this ID
+  skip: 40,        // Offset for page 3
   orderBy: { id: 'asc' }
 });
 ```
@@ -616,7 +706,7 @@ const recentTasks = await prisma.task.findMany({
 
 ### a. Complex Filtering
 ```javascript
-// Advanced where conditions
+// Advanced where conditions with priority filtering
 const filteredTasks = await prisma.task.findMany({
   where: {
     AND: [
@@ -632,7 +722,9 @@ const filteredTasks = await prisma.task.findMany({
           { isCompleted: false },
           { createdAt: { gte: new Date('2024-01-01') } }
         ]
-      }
+      },
+      // Priority-based filtering
+      { priority: { in: ['high', 'medium'] } } // Only high and medium priority tasks
     ]
   },
   include: {
@@ -642,7 +734,11 @@ const filteredTasks = await prisma.task.findMany({
         email: true
       }
     }
-  }
+  },
+  orderBy: [
+    { priority: 'desc' }, // High priority first
+    { createdAt: 'asc' }  // Then by creation date
+  ]
 });
 ```
 
@@ -669,29 +765,37 @@ const tasks = await prisma.task.findMany({
 ## 8. Practical Exercise: Task Analytics API
 
 ### a. Build Advanced Endpoints
+Based on the sample answers, here are the key analytics endpoints you should implement:
+
+**1. User Productivity Analytics Endpoint**
 ```javascript
-// Get user productivity analytics
-app.get('/api/users/:id/analytics', async (req, res) => {
+// GET /api/analytics/users/:id
+app.get('/api/analytics/users/:id', async (req, res) => {
   try {
-    const userId = parseInt(req.params.id);
-    
-    // Get task completion statistics
+    const { id } = req.params;
+    const userId = parseInt(id);
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    // Get task statistics by completion status using groupBy
     const taskStats = await prisma.task.groupBy({
       by: ['isCompleted'],
       where: { userId },
       _count: { id: true }
     });
 
-    // Get recent activity
+    // Get recent tasks with user data using eager loading
     const recentTasks = await prisma.task.findMany({
       where: { userId },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
       include: {
         user: {
           select: { name: true }
         }
-      }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10
     });
 
     // Get weekly progress
@@ -715,35 +819,149 @@ app.get('/api/users/:id/analytics', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+```
 
-// Get team overview (if you had multiple users)
-app.get('/api/team/overview', async (req, res) => {
+**2. Users List with Task Statistics**
+```javascript
+// GET /api/analytics/users
+app.get('/api/analytics/users', async (req, res) => {
   try {
-    const teamStats = await prisma.user.findMany({
-      include: {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Get users with task counts using _count aggregation
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
         _count: {
           select: { tasks: true }
         },
         tasks: {
           where: { isCompleted: false },
-          take: 5,
-          orderBy: { createdAt: 'desc' }
+          select: { id: true },
+          take: 5 // Limit pending tasks for performance
         }
-      }
+      },
+      skip: offset,
+      take: limit,
+      orderBy: { createdAt: 'desc' }
     });
 
-    res.json(teamStats);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    // Get total count for pagination
+    const totalUsers = await prisma.user.count();
+
+    const pagination = {
+      page,
+      limit,
+      total: totalUsers,
+      pages: Math.ceil(totalUsers / limit),
+      hasNext: page * limit < totalUsers,
+      hasPrev: page > 1
+    };
+
+    res.status(200).json({
+      users,
+      pagination
+    });
+  } catch (err) {
+    console.error('Users with stats error:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 ```
 
+**3. Task Search with Raw SQL**
+```javascript
+// GET /api/analytics/tasks/search
+app.get('/api/analytics/tasks/search', async (req, res) => {
+  try {
+    const { q: searchQuery, limit = 20 } = req.query;
+
+    if (!searchQuery || searchQuery.trim().length < 2) {
+      return res.status(400).json({ error: "Search query must be at least 2 characters long" });
+    }
+
+    // Use raw SQL for complex text search with relevance scoring
+    const searchResults = await prisma.$queryRaw`
+      SELECT 
+        t.id,
+        t.title,
+        t.is_completed as "isCompleted",
+        t.priority,
+        t.created_at as "createdAt",
+        u.id as "userId",
+        u.name as "user_name"
+      FROM tasks t
+      JOIN users u ON t.user_id = u.id
+      WHERE t.title ILIKE ${`%${searchQuery}%`} OR u.name ILIKE ${`%${searchQuery}%`}
+      ORDER BY 
+        CASE 
+          WHEN t.title ILIKE ${searchQuery} THEN 1
+          WHEN t.title ILIKE ${`${searchQuery}%`} THEN 2
+          WHEN t.title ILIKE ${`%${searchQuery}%`} THEN 3
+          ELSE 4
+        END,
+        t.created_at DESC
+      LIMIT ${parseInt(limit)}
+    `;
+
+    res.status(200).json({
+      results: searchResults,
+      query: searchQuery,
+      count: searchResults.length
+    });
+  } catch (err) {
+    console.error('Task search error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+**4.Bulk Task Creation**
+// POST /api/tasks/bulk
+app.post('/api/tasks/bulk', async (req, res) => {
+  try {
+    const { user_id } = req.query;
+    const { tasks } = req.body;
+
+    if (!user_id || !tasks || !Array.isArray(tasks)) {
+      return res.status(400).json({ error: "Invalid request data" });
+    }
+
+    // Validate all tasks before insertion
+    const validTasks = tasks.map(task => ({
+      title: task.title,
+      isCompleted: task.isCompleted || false,
+      priority: task.priority || 'medium',
+      userId: parseInt(user_id)
+    }));
+
+    // Use createMany for batch insertion
+    const result = await prisma.task.createMany({
+      data: validTasks
+    });
+
+    res.status(201).json({
+      message: "Bulk task creation successful",
+      tasksCreated: result.count,
+      totalRequested: tasks.length
+    });
+  } catch (err) {
+    console.error('Bulk task creation error:', err);
+    res.status(500).json({ error: err.message });
+  }
+})
+
+
 ### b. Test Your Implementation
 1. Start your PostgreSQL database
 2. Ensure Prisma is properly configured
-3. Test the analytics endpoints
-4. Experiment with different query patterns
+3. Test all the analytics endpoints:
+4. Experiment with different query patterns and parameters
 
 ---
 
@@ -805,12 +1023,14 @@ process.on('uncaughtException', async (error) => {
 In this lesson, you learned:
 - **Eager Loading**: Efficiently fetch related data with LEFT JOIN equivalents
 - **Aggregations**: Use groupBy for data analysis and statistics
+- **Priority Management**: Implement priority-based filtering and task organization
 - **Transactions**: Ensure data consistency across multiple operations
 - **Batch Operations**: Improve performance with bulk operations
 - **Raw SQL**: Use $queryRaw when Prisma's features aren't sufficient
 - **Security**: Prevent SQL injection with parameterized queries
 - **Performance**: Optimize queries with selective loading and pagination
 - **Advanced Patterns**: Complex filtering and conditional includes
+- **Analytics API**: Build comprehensive user productivity and task statistics endpoints
 
 **Next Steps:**
 - Practice with the analytics API exercise

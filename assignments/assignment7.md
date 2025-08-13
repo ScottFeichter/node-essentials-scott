@@ -16,6 +16,7 @@ Building on your existing Prisma application from Lesson 6b, you'll enhance it w
 - Completed Lesson 6b with a working Prisma application
 - PostgreSQL database with users and tasks tables
 - Basic understanding of Prisma ORM operations
+- **Important**: You will need to add a `priority` field to your Task model for this assignment
 
 ---
 
@@ -24,7 +25,7 @@ Building on your existing Prisma application from Lesson 6b, you'll enhance it w
 ### 1. Enhanced Task Analytics API
 
 #### a. User Productivity Analytics Endpoint
-Create a new endpoint `GET /api/users/:id/analytics` that provides comprehensive user statistics:
+Create a new endpoint `GET /api/analytics/users/:id` that provides comprehensive user statistics:
 
 **Requirements:**
 - Use `groupBy` to count tasks by completion status
@@ -44,24 +45,29 @@ Create a new endpoint `GET /api/users/:id/analytics` that provides comprehensive
       "id": 1,
       "title": "Recent task",
       "isCompleted": false,
+      "priority": "medium",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "userId": 1,
       "user": { "name": "John Doe" }
     }
   ],
   "weeklyProgress": [
-    { "createdAt": "2024-01-15", "_count": { "id": 3 } }
+    { "createdAt": "2024-01-15", "_count": { "id": 3 } },
+    { "createdAt": "2024-01-22", "_count": { "id": 5 } }
   ]
 }
 ```
 
 #### b. User List with Task Counts
-Create `GET /api/users` endpoint that shows all users with their task statistics:
+Create `GET /api/analytics/users` endpoint that shows all users with their task statistics:
 
 **Requirements:**
 - Show all users with their total task counts
-- Include pending (incomplete) tasks for each user
+- Include pending (incomplete) tasks for each user (limit to 5 tasks per user)
 - Use `_count` aggregation for efficient counting
 - Implement pagination (limit to 10 users per page)
 - Exclude sensitive information like passwords
+- Include user creation date for sorting
 
 **Expected Response:**
 ```json
@@ -71,21 +77,22 @@ Create `GET /api/users` endpoint that shows all users with their task statistics
       "id": 1,
       "name": "John Doe",
       "email": "john@example.com",
+      "createdAt": "2024-01-15T10:30:00Z",
       "_count": { "tasks": 8 },
-      "pendingTasks": [
+      "tasks": [
         {
-          "id": 3,
-          "title": "Learn Prisma",
-          "isCompleted": false
+          "id": 3
         }
       ]
     }
   ],
   "pagination": {
-    "currentPage": 1,
-    "totalPages": 2,
-    "totalUsers": 15,
-    "usersPerPage": 10
+    "page": 1,
+    "limit": 10,
+    "total": 15,
+    "pages": 2,
+    "hasNext": true,
+    "hasPrev": false
   }
 }
 ```
@@ -97,7 +104,7 @@ Enhance your existing `GET /api/tasks` endpoint to support advanced filtering:
 
 **New Query Parameters:**
 - `status`: Filter by completion status
-- `priority`: Filter by priority (if you add this field)
+- `priority`: Filter by priority (required - add this field to your schema)
 - `date_range`: Filter by creation date range
 - `search`: Text search in task titles
 - `sort_by`: Sort by different fields
@@ -117,29 +124,24 @@ Enhance your existing `GET /api/tasks` endpoint to support advanced filtering:
       "id": 1,
       "title": "Learn Prisma ORM",
       "isCompleted": false,
+      "priority": "high",
       "createdAt": "2024-01-15T10:30:00Z",
-      "user": {
-        "id": 1,
-        "name": "John Doe"
-      }
+      "userId": 1
     }
   ],
-  "filters": {
-    "status": "incomplete",
-    "search": "Prisma",
-    "dateRange": "last_week"
-  },
   "pagination": {
-    "currentPage": 1,
-    "totalPages": 3,
-    "totalTasks": 25,
-    "tasksPerPage": 10
+    "page": 1,
+    "limit": 10,
+    "total": 25,
+    "pages": 3,
+    "hasNext": true,
+    "hasPrev": false
   }
 }
 ```
 
 #### b. Task Search with Raw SQL
-Create a new endpoint `GET /api/tasks/search` that uses `$queryRaw` for complex text search:
+Create a new endpoint `GET /api/analytics/tasks/search` that uses `$queryRaw` for complex text search:
 
 **Requirements:**
 - Search across task titles and user names
@@ -162,19 +164,19 @@ ORDER BY
 **Expected Response:**
 ```json
 {
-  "searchResults": [
+  "results": [
     {
       "id": 5,
       "title": "Learn Prisma Advanced Features",
       "isCompleted": false,
       "createdAt": "2024-01-15T14:20:00Z",
-      "user_name": "John Doe",
-      "relevanceScore": 1
+      "priority": "high",
+      "userId": 1,
+      "user_name": "John Doe"
     }
   ],
-  "searchQuery": "Prisma",
-  "totalResults": 3,
-  "searchTime": "45ms"
+  "query": "Prisma",
+  "count": 1
 }
 ```
 
@@ -236,23 +238,9 @@ Implement `POST /api/tasks/bulk` for creating multiple tasks:
 **Expected Response:**
 ```json
 {
-  "success": {
-    "createdCount": 8,
-    "createdTasks": [
-      {
-        "id": 25,
-        "title": "Task 1",
-        "isCompleted": false,
-        "userId": 1
-      }
-    ]
-  },
-  "errors": [],
-  "summary": {
-    "totalSubmitted": 8,
-    "successfullyCreated": 8,
-    "failed": 0
-  }
+  "message": "Bulk task creation successful",
+  "tasksCreated": 8,
+  "totalRequested": 8
 }
 ```
 
@@ -263,7 +251,6 @@ Add pagination to all list endpoints:
 
 **Requirements:**
 - Use `take` and `skip` for offset-based pagination
-- Implement cursor-based pagination for better performance
 - Add pagination metadata to responses
 - Handle edge cases (invalid page numbers, empty results)
 
@@ -324,7 +311,6 @@ Improve error handling across your application:
 - Handle Prisma-specific error codes (P2025, P2002, etc.)
 - Provide meaningful error messages
 - Implement proper HTTP status codes
-- Add request logging for debugging
 
 #### b. Input Validation
 Enhance your existing validation:
@@ -333,7 +319,6 @@ Enhance your existing validation:
 - Validate date ranges for analytics queries
 - Sanitize search inputs
 - Validate pagination parameters
-- Add rate limiting for search endpoints
 
 ---
 
@@ -353,7 +338,7 @@ project/
 │   ├── taskRoutes.js (enhanced)
 │   └── analyticsRoutes.js (new)
 ├── prisma/
-│   ├── schema.prisma
+│   ├── schema.prisma (updated with priority field)
 │   └── db.js
 ├── app.js (enhanced)
 └── .env
@@ -369,24 +354,28 @@ project/
 Test all new endpoints with Postman or similar tools:
 
 1. **Analytics Endpoints:**
-   - Test with existing users and tasks
+   - Test `GET /api/analytics/users/:id` with existing users and tasks
+   - Test `GET /api/analytics/users` with pagination
+   - Test `GET /api/analytics/tasks/search` with search queries
    - Verify aggregation calculations
    - Test with empty data sets
 
 2. **Advanced Filtering:**
-   - Test all filter combinations
+   - Test `GET /api/tasks` with all filter combinations (status, priority, date_range, search)
    - Verify pagination works correctly
    - Test edge cases (invalid parameters)
+   - Test sorting by different fields
 
 3. **Transactions:**
-   - Test successful operations
+   - Test `POST /api/users/register` with welcome tasks creation
+   - Test `POST /api/tasks/bulk` with bulk task creation
    - Test failure scenarios (verify rollback)
    - Test concurrent operations
 
 4. **Performance:**
-   - Test with large datasets
+   - Test with datasets
    - Verify pagination performance
-   - Check query execution times
+   - Test field selection with different field combinations
 
 ---
 
