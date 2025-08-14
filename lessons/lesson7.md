@@ -312,7 +312,7 @@ const userMetrics = await prisma.task.groupBy({
 
 ---
 
-## 2.5. Priority-Based Filtering and Management
+## 3 Priority-Based Filtering and Management
 
 ### a. Understanding Task Priorities
 The priority field allows you to categorize tasks by importance:
@@ -379,7 +379,7 @@ const filteredTasks = await prisma.task.findMany({
 
 ---
 
-## 3. Database Transactions
+## 4. Database Transactions
 
 ### a. Why Use Transactions?
 Transactions ensure that multiple database operations either all succeed or all fail together, maintaining data consistency.
@@ -440,7 +440,7 @@ try {
 
 ---
 
-## 4. Batch Operations
+## 5. Batch Operations
 
 ### a. Creating Multiple Records
 ```javascript
@@ -500,7 +500,7 @@ const updatedUsers = await prisma.user.updateMany({
 
 ---
 
-## 5. Raw SQL with $queryRaw
+## 6. Raw SQL with $queryRaw
 
 ### a. When to Use Raw SQL
 Prisma doesn't support:
@@ -643,7 +643,7 @@ SQL injection is when an attacker tricks your app into running malicious SQL cod
 
 
 
-## 6. Performance Optimization
+## 7. Performance Optimization
 
 ### a. Selective Field Loading
 ```javascript
@@ -702,7 +702,7 @@ const recentTasks = await prisma.task.findMany({
 
 ---
 
-## 7. Advanced Query Patterns
+## 8. Advanced Query Patterns
 
 ### a. Complex Filtering
 ```javascript
@@ -762,7 +762,7 @@ const tasks = await prisma.task.findMany({
 
 ---
 
-## 8. Practical Exercise: Task Analytics API
+## 9. Practical Exercise: Task Analytics API
 
 ### a. Build Advanced Endpoints
 Based on the sample answers, here are the key analytics endpoints you should implement:
@@ -920,8 +920,9 @@ app.get('/api/analytics/tasks/search', async (req, res) => {
   }
 });
 
+####4. Bulk Task Creation**
 
-**4.Bulk Task Creation**
+javascript
 // POST /api/tasks/bulk
 app.post('/api/tasks/bulk', async (req, res) => {
   try {
@@ -932,7 +933,6 @@ app.post('/api/tasks/bulk', async (req, res) => {
       return res.status(400).json({ error: "Invalid request data" });
     }
 
-    // Validate all tasks before insertion
     const validTasks = tasks.map(task => ({
       title: task.title,
       isCompleted: task.isCompleted || false,
@@ -940,10 +940,7 @@ app.post('/api/tasks/bulk', async (req, res) => {
       userId: parseInt(user_id)
     }));
 
-    // Use createMany for batch insertion
-    const result = await prisma.task.createMany({
-      data: validTasks
-    });
+    const result = await prisma.task.createMany({ data: validTasks });
 
     res.status(201).json({
       message: "Bulk task creation successful",
@@ -954,18 +951,17 @@ app.post('/api/tasks/bulk', async (req, res) => {
     console.error('Bulk task creation error:', err);
     res.status(500).json({ error: err.message });
   }
-})
-
-
-### b. Test Your Implementation
+});
+```
+Test Your Implementation
 1. Start your PostgreSQL database
 2. Ensure Prisma is properly configured
 3. Test all the analytics endpoints:
 4. Experiment with different query patterns and parameters
 
----
 
-## 9. Best Practices and Tips
+ 
+
 
 ### a. Error Handling
 ```javascript
