@@ -56,7 +56,7 @@ The first argument passed, which is optional, is nowhere documented in Passport.
 
 The second argument is a callback.  You are telling the passport local strategy to call this function at authentication time, so that you can do the authentication.  Your function, which might be async, is going to be passed the email, the password, and a callback.  Inside the function, you do the actual validation, using the verifyUserPassword function created previously.  Once the validation returns, you report the result via the callback.  The first argument to the callback is the error, if one was thrown, or null otherwise.  The second argument is the user object you got back from verifyUserPassword, if the verification succeeded, or null if it didn't, in which case you can also pass back a message.
 
-The verifyUserPassword function might throw an error, for example if the database is down. In this case, is very important to catch this error if it is thrown.  You will be in a callback from an Express route handler at this point.  An error thrown from within a callback crashes the Express server.
+The verifyUserPassword function might throw an error, for example if the database is down. It's important to catch this error inside your async callback, otherwise the Express server could crash.
 
 This is the Passport strategy you use at logon time.  
 
@@ -68,7 +68,7 @@ passport.authenticate("local", callback)
 
 **Note the following point carefully.**  What does the passport.authenticate() function return, actually?  The answer is, it returns **a middleware function**, the middleware to be used for the "local" strategy.  But the actual authentication hasn't occurred yet.  It doesn't happen until that middleware is called.
 
-We call the middleware function with a req and a res.  Passport doesn't care about most of the req.  All it's going to look at, in the case of the local strategy, is the body, and in particular, the email and password attributes of the body.  Also we need a res. Passport doesn't care about the res, so we can just pass {}.  Now suppose we have a user already registered, with email "jim@sample.com", and password "wX23-combo".  (You could run your server and do a Postman register request to set this up.)  For a little unit test, we could do the following.  Create a test folder, and within it a file called ppLocalUnitTest.js, with the following contents.
+We call the middleware function with a req and a res.  Passport doesn't care about most of the req.  All it's going to look at, in the case of the local strategy, is the body, and in particular, the email and password attributes of the body.  Also we need a res. Passport doesn't care about the res, so we can just pass {}.  Now suppose we have a user already registered, with email "jim@sample.com", and password "wX23-combo".  (You could run your server and do a Postman register request to set this up.)  For a little unit test, we could do the following.  Create a test folder, and within it a file called ppLocalUnitTest.js, with the following contents: 
 
 ```js
 require("../passport/passport");
@@ -87,7 +87,7 @@ const passportLocalMiddleware = passport.authenticate("local", reportPassportRes
 passportLocalMiddleware(req, {});
 ```
 
-And, lo and behold, we get the user information back, just as passport got it from the database.  If we specify a bad password, we get Authentication Failed.  And if the database is down, we get an error.  By the way, this is a good trick to learn: As you develop code, write unit tests for it.
+And, lo and behold, we receive the user information back, as returned from the database via Passport.  If we specify a bad password, we get Authentication Failed.  And if the database is down, we get an error.  By the way, this is a good trick to learn: As you develop code, write unit tests for it.
 
 The login() function in your user controller still uses the memory store, just to keep track of who is logged in.  You can now comment out that function.  Add a new route handler, this time in passport.js.  Here is what it should do:
 
@@ -128,7 +128,7 @@ const logonRouteHandler = async (req, res, next) => {
 
 **There are a number of subtleties here.  Pay close attention.**  
 
-We need to set the cookie at logon time, to establish the session.  So, we create a signed JWT cookie.  The payload must contain the user.id, because we'll need to know who the user is on subsequent requests.  If it's in the cookie, we have the information we need.  We also put the csrfToken in the cookie.  We use a cryptographically random string.  We need the csrfToken in the cookie to protect against CSRF attack.  In the code above, we put in the user's name, which is not really necessary.  You could put other stuff in too, but a cookie should be kept small.  We set the JWT to expire in one hour.  As this back end is going to be at a different URL than the front end, the cookie is a cross-site cookie.  Browsers like Chrome discard cross site cookies unless the domain is set to match the domain of the back end, the secure flag is set, and the SameSite flag is set to "None".  We don't want JavaScript on the browser side to be able to see this cookie, so it has the HttpOnly flag.  The cookie expires when the JWT does, after one hour.  We sign the cookie with the secret.  That won't work until you set the JWT_SECRET in the .env:
+We need to set the cookie at logon time, to establish the session.  So, we create a signed JWT cookie.  The payload must contain the user.id, because we'll need to know who the user is on subsequent requests.  If it's in the cookie, we have the information we need.  We also put the csrfToken in the cookie.  We use a cryptographically random string.  We need the csrfToken in the cookie to protect against CSRF attacks.  In the code above, we put in the user's name, which is not really necessary.  You could put other stuff in too, but a cookie should be kept small.  We set the JWT to expire in one hour.  As this back end is going to be at a different URL than the front end, the cookie is a cross-site cookie.  Browsers like Chrome discard cross site cookies unless the domain is set to match the domain of the back end, the secure flag is set, and the SameSite flag is set to "None".  We don't want JavaScript on the browser side to be able to see this cookie, so it has the HttpOnly flag.  The cookie expires when the JWT does, after one hour.  We sign the cookie with the secret.  That won't work until you set the JWT_SECRET in the .env:
 
 JWT_SECRET=yLVNRLD35rNgnswAjyxxokZpdnUOqhlB
 
@@ -162,6 +162,8 @@ const logonRouteHandler = async (req, res, next) => {
 Because the callback is not wrappered in a promise, we **must** catch the error if any is thrown.  No error can be thrown in this case, so we don't need a try/catch, but the callback might be passed an error.  If it is, we **must** call next(err) instead of throwing the error, if we are to pass the error to the error handler.  If an error is thrown from inside the callback, the server process will crash with an unhandled exception.  Note: For this style of callback handling, when `await logonRouteHandler(req, res, next);` returns, the response hasn't been sent yet.  We'll need to handle that problem when testing.  Note also that for this style, the route handler has to have a next parameter passed. 
 
 Finally, we have to include the csrfToken in what is sent back to the front end.  For CSRF protection, the front end has to include this token in each subsequent request.  We will put it in the X-CSRF-TOKEN header.
+
+For all protected routes (routes that require authentication), the frontend must include the CSRF token in the X-CSRF-TOKEN header. This includes any POST, PATCH, PUT, or DELETE requests to protected endpoints. Without this token, the request will be rejected with a 401 Unauthorized status.
 
 You got all that?
 
