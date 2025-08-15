@@ -10,6 +10,27 @@
 3. Testing with Postman
 4. Introducing Express
 
+## **Understanding the Layers: HTTP vs Node vs Express**
+
+Before diving into the code, it's important to understand the distinction between these three concepts:
+
+### **HTTP (Protocol Layer)**
+- **What it is**: A standardized protocol for how clients and servers communicate over the web
+- **What it defines**: Request/response format, methods (GET, POST, etc.), status codes, headers
+- **Where it lives**: In the network - it's the language that browsers and servers speak to each other
+
+### **Node.js HTTP Module (Low-level Implementation)**
+- **What it is**: Node's built-in way to create HTTP servers using the HTTP protocol
+- **What it provides**: Raw access to HTTP requests/responses, manual parsing, basic server creation
+- **Level of abstraction**: Low - you handle everything manually (parsing bodies, setting headers, routing)
+
+### **Express.js (High-level Framework)**
+- **What it is**: A web framework built on top of Node.js that simplifies HTTP server creation
+- **What it provides**: Automatic parsing, middleware system, routing, error handling
+- **Level of abstraction**: High - Express handles the HTTP complexity so you can focus on business logic
+
+**Think of it this way**: HTTP is the language, Node HTTP is the manual translation, and Express is the automatic translator that makes everything easier.
+
 ## **2.1 Event Emitters and Listeners**
 
 Event emitters allow communication between different parts of an application.  Once an event emitter has been created, listeners can sign up to get called whenever the emitter emits an event.  An event has a name, and may also pass various arguments to the listeners.  Create a file called events-intro.js in your node-homework/assignment2 folder, and put in the following code:
@@ -138,6 +159,8 @@ This is one perfectly valid way of creating a web application back end.  Your se
 
 Express is not part of the Node base.  You need to do an `npm install express` while in your node-homework folder.  Express may already be part of your node-homework repository, but install it to be sure.  We are going to use Express to create a back end, a series of REST APIs.  Express can be used for other purposes, such as static file serving, or for server side rendered pages.  Server side rendering provides dynamic HTML using a templating language such as EJS or Pug.  We won't be doing that, and there are other more modern frameworks for server side rendered pages, such as JSX with NextJS.
 
+**Key Difference from Node HTTP**: While the Node HTTP module gives you raw access to HTTP requests and requires you to manually parse bodies, set headers, and handle routing, Express automatically handles these low-level details. Express builds on top of Node's HTTP capabilities to provide a higher-level, more developer-friendly interface. Think of it as the difference between building a house from scratch (Node HTTP) versus using pre-made components (Express).
+
 In the previous section on REST and HTTP, you learned about the components of an HTTP request: a method (such as GET, POST, PUT, PATCH, or DELETE), a path, query parameters, headers, sometimes a body, and cookies.  In Express, you have the following elements:
 
 1. An app, as created by a call to Express.
@@ -221,7 +244,7 @@ const customerMiddleware = require("./middleware/customerAuth)
 app.use("/customers", customerAuth, customerRouter)
 ```
 
-The customerMiddleware function might check if the customer is logged in.  If not, it could send a response with a 401 status code, possibly with an error message in the body.  If a customer is logged in, the middleware functiom might add additional information to the req object.  It would call next, so that processing would pass to the customerRouter.
+The customerMiddleware function might check if the customer is logged in.  If not, it could send a response with a 401 status code, possibly with an error message in the body.  If a customer is logged in, the middleware function might add additional information to the req object.  It would call next, so that processing would pass to the customerRouter.
 
 For each request sent to the server, there must be exactly one response.  If no response is sent, a user might be waiting at the browser for a timeout.  If several responses are sent for one request, Express reports an error instead of sending the second one.
 
@@ -245,9 +268,10 @@ Let's sum up common characteristics of middleware functions and response handler
 - Call next().
 - Throw an error.
 
-Even route handlers sometimes call next().  In these cases they call `next(error` to pass the error to the error handler.  Middleware functions often call next() withouut parameters, to call the next middleware in the chain or the route handler for the request, but they might call `next(error)` in some cases.
+Even route handlers sometimes call next().  In these cases they call `next(error` to pass the error to the error handler.  Middleware functions often call next() without parameters, to call the next middleware in the chain or the route handler for the request, but they might call `next(error)` in some cases.
 
-4. If `next(error)` is called or an error is thrown, the error handler is called and passed the error.  In Express 5, this happens even if the error is thrown while an async middleware function or route handler is waiting on an asynchronous operation and that error is not caught in the middleware function or route handler.  **However, please note:** Middleware functions and route handlers sometimes call functions that have callbacks.  They may send responses or call next() from with the callback.  That works fine.  But they must **never** throw an error from within a callback.  That would crash the server.  They must call `next(error)` instead.
+4. If next(error) is called or an error is thrown, the error handler is called and passed the error. In Express 5, this happens even if the error occurs while an async middleware function or route handler is waiting on an asynchronous operation. **However, please note:** Middleware functions and route handlers sometimes call functions that have callbacks. You must **never**  throw an error from within a callback, because that would crash the server. Instead, call next(error), which properly passes the error to Express’s error handling system so it can be handled gracefully without affecting other users.
+
 
 ## **Parsing the Body of a JSON Request**
 
@@ -299,7 +323,7 @@ res.send()    This sends plain text data, or perhaps HTML.
 
 1. A route handler always gets the req and res objects.  The req object contains information from the request, perhaps with additional attributes added by middleware functions.  The res object has methods including res.send() and res.json() that enable the route handler to respond to the request.
 
-2. A route hander must either respond to the request with res.send() or res.json(), or call the error handler with next(error), or throw the error.
+2. A route handler must either respond to the request with res.send() or res.json(), or call the error handler with next(error), or throw the error.
 
 3. A middleware function may or may not respond to the request.  Instead it may call next() to pass control to the next handler or middleware function in the chain.  It must either respond to the request or call next, or perhaps throw an error.
 
