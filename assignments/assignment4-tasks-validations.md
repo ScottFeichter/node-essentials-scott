@@ -2,11 +2,11 @@
 
 ## **Assignment Instructions**
 
-All of the work for this assignment goes into your project.  You do not use the assignment4 folder.  Instead, you'll make changes to your app.js and to your controllers, routers, and middleware.  Create an assignment4 git branch before you start.
+All of the work for this assignment goes into your project.  You do not use the assignment4 folder.  Instead, you'll make changes to your app.js and to your controllers, routers, and middleware. Before you start, create a new branch called assignment4 from the main branch.
 
 ### **The Task Routes**
 
-You have created route handlers that allow users to register, to logon, and to logoff.  Now, you add capabilites so that each user can do create, update, modify, and delete on task entries.  Here is the specification for your work.  But don't start yet.
+You have created route handlers that allow users to register, to logon, and to logoff.  Now, you add capabilities so that each user can do create, update, modify, and delete on task entries.  Here is the specification for your work.  But don't start yet.
 
 Create a task controller and a task router.  You need to support the following routes:
 
@@ -16,9 +16,9 @@ Create a task controller and a task router.  You need to support the following r
 
 3. GET "/tasks/:id".  This returns the task with a particular ID for the currently logged on user.
 
-4. PATCH "/tasks/:id.  This updates the task with a particular ID for the currently logged on user.
+4. PATCH "/tasks/:id".  This updates the task with a particular ID for the currently logged on user.
 
-5. DELETE "/tasks/:id.  This deletes the task with a particular ID for the currently logged on user.
+5. DELETE "/tasks/:id".  This deletes the task with a particular ID for the currently logged on user.
 
 So, that's five functions you need in the task controller, and five routes that you need in the task router.  But, we have a few problems:
 
@@ -42,6 +42,8 @@ app.use("/tasks", authMiddleware, taskRouter);
 ```
 
 That solves the first problem.  The authMiddleware gets called before any of the task routes, and it makes sure that no one can get to those routes without being logged on.  These are called "protected routes" because they require authentication.
+
+Protected routes act as a security barrier - they check if a user has a valid session before allowing access to sensitive operations like creating, reading, updating, or deleting tasks. Without this protection, anyone could potentially access or modify other users' data, which would be a serious security vulnerability in a real application.
 
 Let's go on to problem 2.  Within your tasks controller, `loggedOnUser` is a reference to an object, and you want to have a list of tasks within that object.  Each should have a unique ID  You didn't create that list when you stored the user object. First, create a little counter function in taskController.js, as follows:
 
