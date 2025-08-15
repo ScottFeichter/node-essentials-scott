@@ -2,12 +2,12 @@
 
 ## **Lesson Overview**
 
-**Learning objective**: Students will optionally explore various ideas additional functions that may be be added to an application.  Among the ideas presented are Oauth authentication using Google, adding additional associations to a data model, role based access control, pagination of result sets, updating many records with a single operation, and Swagger documentation of APIs.
+**Learning objective**: Students will optionally explore various ideas for additional functions that may be added to an application.  Among the ideas presented are OAuth authentication using Google, adding additional associations to a data model, role based access control, pagination of result sets, updating many records with a single operation, and Swagger documentation of APIs.
 
 **Topics**:
 
 1. Ideas for your Todos Application
-2. Oauth Authentication with Google 
+2. OAuth Authentication with Google 
 3. Todos in Folders
 4. Role Based Access Control
 5. Pagination of Result Sets
@@ -20,9 +20,44 @@
 
 As part of the Rubric for the Final Project, we ask you to add something.  Here are some ideas on things to add.  This is not an exhaustive list.  You may think of other things you'd like to add instead.  We do ask that you focus on the back end, as that is the emphasis for this class.  For the items listed in this lesson, you don't have to build them according to the approach described.  Also, these are just outlines -- you'll have to figure out the exact steps yourself.
 
-## **11.2 Oauth Authentication with Google**
+## **11.2 OAuth Authentication with Google**
 
-You have seen a button on web applications you use that says, Logon with Google.  That's Oauth.  Here's how you'd do it.
+### **What is OAuth?**
+
+OAuth (Open Authorization) is a security protocol that allows applications to authenticate users without requiring them to share their actual passwords. Instead, it uses tokens to grant access to user data and resources. 
+
+### **How OAuth Works Between Frontend, Backend, and Google**
+
+The OAuth flow involves three main parties:
+
+1. **Your Frontend (React App)** - The application requesting access
+2. **Your Backend (Node.js/Express)** - Your server that handles authentication
+3. **Google (OAuth Provider)** - The service that verifies the user's identity
+
+### **The OAuth Flow Process**
+
+```
+User clicks "Login with Google" 
+    ↓
+Frontend redirects to Google's OAuth page
+    ↓
+User logs into Google and grants permissions
+    ↓
+Google redirects back to your app with an authorization code
+    ↓
+Frontend sends the code to your backend
+    ↓
+Backend exchanges code for access token with Google
+    ↓
+Backend verifies the token and creates/updates user record
+    ↓
+Backend sets JWT session cookie and returns user info
+    ↓
+User is now authenticated in your app
+```
+
+### **Implementation Steps**
+
 
 1. You need to enable the front end with the Google component.  The process is described **[here.](https://blog.logrocket.com/guide-adding-google-login-react-app/)**  You'd get that working first.  Request the user's name and email as part of the token payload.
 
@@ -40,7 +75,7 @@ You'd need to extend the user model to add a role column.  One way to do this is
 
 ## **11.5 Pagination of Result Sets**
 
-Your React application does do pagination.  The way it does it, of course, is to load the entire list of tasks, and then just show some of them.  If the list you are paginating is long, that can be unwise.  You can have Prisma do the pagination for you -- but the front end has to keep track of which page of the result set is to be shown, so that the user can scroll back and forth.  Prisma pagination is described **[here.](https://www.prisma.io/docs/orm/prisma-client/queries/pagination)**  You would probably want to create a standalone program to that could populate the database with several hundred tasks, so that you can test your work.
+Your React application does do pagination.  The way it does it, of course, is to load the entire list of tasks, and then just show some of them.  If the list you are paginating is long, that can be unwise.  You can have Prisma do the pagination for you -- but the front end has to keep track of which page of the result set is to be shown, so that the user can scroll back and forth.  Prisma pagination is described **[here.](https://www.prisma.io/docs/orm/prisma-client/queries/pagination)**  You would probably want to create a standalone program that could populate the database with several hundred tasks, so that you can test your work.
 
 ## **11.6 Documenting Your APIs with Swagger**
 
@@ -52,7 +87,7 @@ When you work as a team, various team members may be assigned large tasks, and m
 
 ## **11.8 Updating Many Records with a Single Operation**
 
-You might want to flag a bunch of tasks as complete, and then save the result.  Or, you could mark a bunch of tasks for deletion, and then delete them all.  Or you could select a bunch of tasks and move all selected ones to a folder.  In each case, you'd have a route, and in the body of the json request, you'd have a JSON array of all the task IDs for a the particular operation.
+You might want to flag a bunch of tasks as complete, and then save the result.  Or, you could mark a bunch of tasks for deletion, and then delete them all.  Or you could select a bunch of tasks and move all selected ones to a folder.  In each case, you'd have a route, and in the body of the json request, you'd have a JSON array of all the task IDs for the particular operation.
 
 ---
 
