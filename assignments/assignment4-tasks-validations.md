@@ -2,11 +2,11 @@
 
 ## **Assignment Instructions**
 
-All of the work for this assignment goes into your project.  You do not use the assignment4 folder.  Instead, you'll make changes to your app.js and to your controllers, routers, and middleware.  Create an assignment4 git branch before you start.
+All of the work for this assignment goes into your project.  You do not use the assignment4 folder.  Instead, you'll make changes to your app.js and to your controllers, routers, and middleware. Before you start, create a new branch called assignment4 from the main branch.
 
 ### **The Task Routes**
 
-You have created route handlers that allow users to register, to logon, and to logoff.  Now, you add capabilites so that each user can do create, update, modify, and delete on task entries.  Here is the specification for your work.  But don't start yet.
+You have created route handlers that allow users to register, to logon, and to logoff.  Now, you add capabilities so that each user can do create, update, modify, and delete on task entries.  Here is the specification for your work.  But don't start yet.
 
 Create a task controller and a task router.  You need to support the following routes:
 
@@ -16,9 +16,9 @@ Create a task controller and a task router.  You need to support the following r
 
 3. GET "/tasks/:id".  This returns the task with a particular ID for the currently logged on user.
 
-4. PATCH "/tasks/:id.  This updates the task with a particular ID for the currently logged on user.
+4. PATCH "/tasks/:id".  This updates the task with a particular ID for the currently logged on user.
 
-5. DELETE "/tasks/:id.  This deletes the task with a particular ID for the currently logged on user.
+5. DELETE "/tasks/:id".  This deletes the task with a particular ID for the currently logged on user.
 
 So, that's five functions you need in the task controller, and five routes that you need in the task router.  But, we have a few problems:
 
@@ -42,6 +42,8 @@ app.use("/tasks", authMiddleware, taskRouter);
 ```
 
 That solves the first problem.  The authMiddleware gets called before any of the task routes, and it makes sure that no one can get to those routes without being logged on.  These are called "protected routes" because they require authentication.
+
+Protected routes act as a security barrier - they check if a user has a valid session before allowing access to sensitive operations like creating, reading, updating, or deleting tasks. Without this protection, anyone could potentially access or modify other users' data, which would be a serious security vulnerability in a real application.
 
 Let's go on to problem 2.  Within your tasks controller, `loggedOnUser` is a reference to an object, and you want to have a list of tasks within that object.  Each should have a unique ID  You didn't create that list when you stored the user object. First, create a little counter function in taskController.js, as follows:
 
@@ -164,7 +166,13 @@ const {error, value} = userSchema.validate({name: "Bob", email: "nonsense", pass
 
 You do `{abortEarly: false}` so that you can get all the error information to report to the user, not just the first failure.  When the validate() call returns, if error is not null, there is something wrong with the request, and error.message says what the error is.  If error is null, then value has the object you want to store, which may be different from the original.  The email would have been converted to lower case, for example.  In this case, the email is not correct, the password is not allowed, and favoriteColor is not part of the schema, so there are three errors. 
 
-Add validations to your create operations for users and tasks, and your to your update operation for tasks.  You validate req.body.  If you get an error, you return a BAD_REQUEST status, and you send back a JSON body with the error message provided by the validation.  If you don't get an error, you go ahead and store the returned value, returning a CREATED, or an OK if an update completes.  Then test your work with Postman, trying both good and bad requests.  
+Add validations to your create operations for users and tasks, and your to your update operation for tasks.  It is possible that these requests might be sent without a body, so you must first have:
+
+```js
+if (!req.body) req.body = {};
+```
+
+Otherwise validation won't work right.  You then validate req.body.  If you get an error, you return a BAD_REQUEST status, and you send back a JSON body with the error message provided by the validation.  If you don't get an error, you go ahead and store the returned value, returning a CREATED, or an OK if an update completes.  Then test your work with Postman, trying both good and bad requests.  
 
 ### **Storing Only a Hash of the Passwords**
 
