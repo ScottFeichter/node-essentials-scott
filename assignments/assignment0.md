@@ -1,6 +1,6 @@
 # Getting Started with Node Development
 
-Welcome to Code the Dream’s Node/Express class! You will be learning Node, an implementation of the JavaScript engine that runs standalone or as a web server. This page describes how to begin. You can develop Node applications on MacOS, Linux, or Windows. If you are developing on Windows, there is no need to do development in a virtual machine, as Node development works fine in Windows native environments, but you can use the Windows Subsystem for Linux if you prefer. You will need to install:
+Welcome to Code the Dream’s Node/Express class! You will be learning Node.js, an implementation of the JavaScript engine that runs standalone or as a web server. This page describes how to begin. You can develop Node applications on MacOS, Linux, or Windows. If you are developing on Windows, there is no need to do development in a virtual machine, as Node development works fine in Windows native environments, but you can use the Windows Subsystem for Linux if you prefer. You will need to install:
 
 - Git
 - Node
@@ -10,7 +10,7 @@ Welcome to Code the Dream’s Node/Express class! You will be learning Node, an 
 
 ## Git
 
-The git program s is typically already present on MacOS and Linux. You can run
+The git program is typically already present on MacOS and Linux. You can run
 
 ```
 git --version
@@ -29,6 +29,13 @@ sudo apt update
 sudo apt install nodejs
 sudo apt install npm
 ```
+
+**Verify Node.js and npm installation:**
+```bash
+node --version
+npm --version
+```
+You should see version numbers for both tools.
 
 ## Postgresql
 
@@ -50,6 +57,12 @@ CREATE DATABASE tasklist OWNER <username>;
 CREATE DATABASE testtasklist OWNER <username>;
 \q
 ```
+
+**Verify PostgreSQL installation:**
+```bash
+psql --version
+```
+You should see a version number like `psql (PostgreSQL) 14.x`.
 </details>
 
 <details>
@@ -87,7 +100,7 @@ CREATE ROLE <username> LOGIN CREATEDB;
 ```
 </details>
 
-### The Postgresql Service
+### The PostgreSQL Service
 
 The steps above won't ensure that the Postgresql service always starts on Mac or Linux.  If you reboot, it won't automatically start.  This could be fixed, but you don't need it running all the time.  You only need it when working on a Node assignment that uses the database, but you will get error messages if you don't start the service when working on those lessons.
 
@@ -182,6 +195,17 @@ node load-db
 
 You should see messages that tables have been loaded.  If this doesn't work, ask a mentor or another student for help.  Remember that the Postgresql service must be running when you do this command.
 
+### What is the `load-db.js` file?
+
+The `load-db.js` file is a **database setup script** that:
+
+- **Creates 5 database tables**: customers, employees, products, orders, and line_items
+- **Loads sample data** from CSV files in a `./csv/` folder
+- **Sets up relationships** between tables (foreign keys)
+- **Validates your database connection** is working
+
+When you run `node load-db`, it builds a complete business database system that you'll use for your assignments. Make sure PostgreSQL is running and the `./csv/` folder exists with the required data files.
+
 
 ## Your Assignments
 
@@ -202,7 +226,13 @@ git commit -m "Completion of week 1 assignment"
 git push origin assignment1
 ```
 
-You then go to github and open your `node-homework` repository. You create a pull request.  Open the assignment submission form for the class. Include a link to your pull request in that form.  **Do not merge the pull request until your reviewer approves it.**  Each week’s work must be in a different git branch, and you create the assignment2 branch from the assignment1 branch so that each week builds on the work from the weeks before.
+You then go to github and open your `node-homework` repository. You create a pull request.  Open the assignment submission form for the class. Include a link to your pull request in that form.  **Do not merge the pull request until your reviewer approves it.** Each assignment should be developed in its own feature branch, created from the latest version of the main branch. This keeps your work isolated and avoids carrying over unfinished code from earlier assignments. 
+Before creating a new branch, make sure your local `main` branch is up to date:
+
+```bash
+git checkout main
+git pull origin main
+git checkout -b assignment2
 
 ## The `node-homework` Project Structure
 
