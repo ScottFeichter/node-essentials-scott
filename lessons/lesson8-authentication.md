@@ -2,7 +2,7 @@
 
 ## **Lesson Overview**
 
-**Learning objective**: Students will learn basic concepts underlying authentication in browser based applications.  Students will learn best practices and potential pitfalls for authentication.  Students will learn how to use the Passport Node package for authentication.  Students will also learn how to mitigate other types of security risks.
+**Learning objective**: Students will learn basic concepts underlying authentication in browser based applications.  Students will learn best practices and potential pitfalls for authentication.  Students will learn how to use the Passport package in Node.js for authentication.  Students will also learn how to mitigate other types of security risks.
 
 **Topics**:
 
@@ -31,15 +31,15 @@ In the application you are building, there are three kinds of authentication:
 
 2. Server to server: In our case, the back end server accesses the database server on behalf of the user.  When you promote your application to the Internet, you will configure it with a secret, in this case a database URL containing a password, which is validated with each database access.  As this access occurs, the back end code must include authorization checks to ensure that the data requested or written is only that subset of data for which the user is authorized.  The back end server also authenticates to the front end server, via HTTPS.
 
-3. User to back end: We focus in this lesson on how we know who the user is who is making requests of the applcation.  Note that the user does NOT authenticate to the front end.  There is no way to make such authentication secure.
+3. User to back end: This lesson focuses on identifying the user making requests to the application.  Note that the user does NOT authenticate to the front end.  There is no way to make such authentication secure.
 
 ## **8.2 Authentication part 1: Establishing a browser session with a back end.**
 
-1. Basic authentication: In the most basic scenario, the user has a userid and password, which is sent to the back end.  If these match what is stored, then the user is authenticated.
+1. Basic authentication: In the most basic scenario, a user provides a user ID and password, which are sent to the back end.  If these match what is stored, then the user is authenticated.
 
-2. Distributed authentication: You might sign on using Google or Github or Facebook.  In this case, the user has a browser session with one of these sources of identity. The front end requests a token from, say, Google, and user is prompted to approve or reject sharing their identity with the back end.  If the Google identity service recognizes the back end target, and if the user approves this sharing, the Google identity service returns a token to the front end.  This token is then sent to the back end.  If the back end trusts the identity service and validates the token, the user is authenticated.
+2. Distributed authentication: You might sign on using Google or GitHub or Facebook.  In this case, the user has a browser session with one of these sources of identity. The front end requests a token from, say, Google, and user is prompted to approve or reject sharing their identity with the back end.  If the Google identity service recognizes the back end target, and if the user approves this sharing, the Google identity service returns a token to the front end.  This token is then sent to the back end.  If the back end trusts the identity service and validates the token, the user is authenticated.
 
-3. Multifactor authentication: This is the same deal, but with additional proofs of identity, such as returning a passcode sent to a phone.
+3. Multifactor authentication: Adds additional verification, such as a passcode sent to a phone. 
 
 4. Client side authenticators: The back end server sends an authentication request to a trusted device, which the user is prompted to approve.
 
@@ -49,7 +49,7 @@ We are only going to implement basic authentication, but we will use the Passpor
 
 ## **8.3 Authentication part 2: Maintaining the browser session with the back end.**
 
-Once the user is authenticated, they will want to send requests for protected resources.  But, they don't want to enter an ID and password for every request, so they need an established session.  The inital authentication step is performed once per session, although the session typically times out after a while.  Still, each request after the initial authentication must also be authenticated, meaning that a credential must be sent with each and every request.  While there are many approaches to authentication part 1, there is only one practical and secure means of doing part 2 for browser based apps.
+Once the user is authenticated, they will want to send requests for protected resources.  But, they don't want to enter an ID and password for every request, so they need an established session.  The initial authentication step is performed once per session, although the session typically times out after a while.  Still, each request after the initial authentication must also be authenticated, meaning that a credential must be sent with each and every request.  While multiple approaches exist for initial authentication, only one practical and secure method exists for maintaining browser sessions.
 
 Once the user has proven who they are to the back end, the back end sends a Set-Cookie header for an HttpOnly cookie to the front end.  This is stored by the browser, and the front end sends this cookie as a credential with each subsequent request.  Because it is an HttpOnly cookie, front end JavaScript code has no access to it.  That's a good thing.  If there is a security hole in the front end, as is often the case, and if the credential is accessible from JavaScript, any attacker could capture the credential and do as they please, with all the authorization that the user has.
 
@@ -62,7 +62,7 @@ Typically the front end and back end are running on different hosts, so the auth
 5. The cookie has the domain set to the domain of the back end host.
 6. The Set-Cookie is sent in response to a fetch request with `credentials: 'include'`.
 
-Setting up HTTPS connections in a development environment is a little bit complicated.  Instead, the front end communicates with the back end via a proxy in the middle.  The proxy intercepts each request to the back end, and, when it sends the back end response to the user's browser, it makes it look as if it came from the same host that the front end is running on.  In this case, when the Set-Cookie header is received, it doesn't appear to be a cross-site cookie to the browser.  In the development environment, cookie is sent without `secure` flag, without any domain, and with `SameSite: "Lax"`.  In our project, we'll use the Vite proxy for this purpose.
+Setting up HTTPS connections in a development environment is a little bit complicated.  Instead, the front end communicates with the back end via a proxy in the middle.  The proxy intercepts each request to the back end, and, when it sends the back end response to the user's browser, it makes it look as if it came from the same host that the front end is running on.  In this case, when the Set-Cookie header is received, it doesn't appear to be a cross-site cookie to the browser.  In the development environment, cookie is sent without `secure` flag, without any domain, and with `SameSite: "Lax"`.  In our project, the Vite proxy will handle cross-origin requests in development.
 
 An HttpOnly cookie is the **only** general purpose secure approach for maintaining the authenticated session in a browser application.  An all too common practice is for the back end to send a session token to the front end in the body of a REST request.  The token is then stored in localStorage or sessionStorage for transmission with subsequent requests.  **Such an approach is bad for security.** If there is a security hole anywhere in front end code, the session token could be captured by an attacker and reused.  Do not do it this way.  Credentials and other sensitive data must never be stored in localStorage or sessionStorage.
 
@@ -76,9 +76,9 @@ The approach described above can leave a back door open.  Once the cookie is set
 
 ### **Cross Origin Resource Sharing**
 
-The first line of defense against the CSRF attack is the CORS (Cross Origin Resouce Sharing) configuration.  The browser observes that the front and back end URLs are not the same, for either the request from the banking front end or the request from the attacker front end.  The front end URL is its "origin", and the back end has a different origin.  So, before the browser sends a request to the back end, it sends a "pre-flight" request, making sure that the front end URL is allowed to access the back end, and making sure not to send any cookies or headers to that back end unless they are permitted by the back end.  The back end CORS configuration includes only certain allowed origins.  
+The first line of defense against the CSRF attack is the CORS (Cross Origin Resource Sharing) configuration.  The browser observes that the front and back end URLs are not the same, for either the request from the banking front end or the request from the attacker front end.  The front end URL is its "origin", and the back end has a different origin.  So, before the browser sends a request to the back end, it sends a "pre-flight" request, making sure that the front end URL is allowed to access the back end, and making sure not to send any cookies or headers to that back end unless they are permitted by the back end.  The back end CORS configuration includes only certain allowed origins.  
 
-Unfortunately, CORS is not enough.  Some requests can bypass CORS.  One example is a GET request.  This is why you never want to make data changes on the back end in respond to a GET!  Even some POST requests can bypass CORS.  Some back ends, if they only accept the "application/json" content type, may rely on CORS to protect against CSRF, and technically that should suffice, but it's best to add the protection described below.  If the back end accepts data that has been posted in a form, the content type is "application/x-www-form-urlencoded", and in this case CSRF protections are essential, as such requests can bypass CORS.
+Unfortunately, CORS is not enough.  Some requests can bypass CORS.  One example is a GET request.  This is why you never want to make data changes on the back end in response to a GET!  Even some POST requests can bypass CORS.  Some back ends, if they only accept the "application/json" content type, may rely on CORS to protect against CSRF, and technically that should suffice, but it's best to add the protection described below.  If the back end accepts data that has been posted in a form, the content type is "application/x-www-form-urlencoded", and in this case CSRF protections are essential, as such requests can bypass CORS.
 
 ### **Preventing CSRF Attacks with a Token**
 
@@ -94,7 +94,7 @@ There is no secure place for the front end to store a secret.  If you have a fro
 
 ## **8.5 Passport: What it is, and how to use it.**
 
-Passport is an authentication framework often used with Express. **Note:** Passport is just a framework.  For example, if you use basic authentication with user IDs and passwords, Passport will store those for you, and will check them as the user logs on ... but only if you provide the code that performs these functions.  Passport just provides a place to plug in the code you provide.  The value that Passport provides is in its support for lots of plugins, for Google, for Github, for JSON Web Tokens, etc., so that you can add those over time to enhance your application. 
+Passport is an authentication framework often used with Express. **Note:** Passport is just a framework.  For example, if you use basic authentication with user IDs and passwords, Passport will store those for you, and will check them as the user logs on ... but only if you provide the code that performs these functions.  Passport just provides a place to plug in the code you provide.  The value that Passport provides is in its support for lots of plugins, for Google, for GitHub, for JSON Web Tokens, etc., so that you can add those over time to enhance your application. 
 
 You will use five packages in this lesson:
 
@@ -108,7 +108,7 @@ You will use five packages in this lesson:
 - express-rate-limit
 - helmet
 
-A lot of this is just middleware.  You only need to provide a little configuration and an app.use() statement.
+Most of these packages are middleware, requiring minimal configuration and an app.use() statement.
 
 The passport package is the overall authentication framework.  The passport-local package provides support for local authentication, and you will configure it to validate the user ID and password with what is stored in the database.  The passport-jwt package is used as middleware.  For every request on a protected route, the middleware is invoked to validate a JSON Web Token (JWT) and to store information about the user in the req object to be passed on to the route handler.  Passport can be configured to use the express-session package.  When that is used, a secure HttpOnly cookie is created to be used as the session credential and to store session state.  You won't do it that way.  Instead, you'll use the jsonwebtoken package to create the JSON web token (JWT) to be stored as a cookie.  The JWT is signed, meaning that its contents, together with a secret, are hashed, and the hash is stored in the cookie as well as its contents.  This ensures that no attacker can spoof the cookie.  The signature is checked in the authentication middleware for every request on a protected route.  We don't encrypt the JWT or the cookie, although we could. The information in the cookie is accessible, for example using browser developer tools, but it doesn't matter for our use case.
 
@@ -120,7 +120,7 @@ Authentication is not the only security issue to worry about.  You also need to 
 
 1. Injection attacks: An injection attack sends program instructions, often scripts embedded in data.  A cross site scripting attack (XSS) involves embedding a script in a web page or URL.  The script runs as the page is displayed.  A back end is not directly vulnerable to an XSS attack, because it doesn't serve up pages for browser display.  But the vulnerability is still to be taken seriously, even for a back end.  A back end might be used to store data containing a script that is subsequently retrieved and displayed by the front end, triggering the exploit.  Another kind of injection attack is SQL injection, where SQL statements are embedded in data and cause damage when they run.  Your application accesses the database using Prisma, and Prisma provides comprehensive protections against SQL injection, by sanitizing the statements that are actually executed.
 
-2. Denial of of service attacks (DOS).  This is where a bot sends a flood of requests to overload the server.  There are also distributed denial of service (DDOS) attacks, where the flood of request originate from a collection of bots.
+2. Denial of service attacks (DOS).  This is where a bot sends a flood of requests to overload the server.  There are also distributed denial of service (DDOS) attacks, where the flood of requests originate from a collection of bots.
 
 3. Cross origin attacks: These are when requests come from a hostile front end.  We have mentioned CORS.  If Express is run without the CORS package, all browser requests that use the CORS protocol fail.  THe CORS package grants limited access to a limited number of front end origins.
 
@@ -132,7 +132,7 @@ For denial of service, you will use middleware from the `express-rate-limit` pac
 
 You'll use the `cors` package, not to provide additional protection, but to grant limited access.  Your front end and back end will run on different origins, so this package is necessary to make things work.
 
-You'll also use the `helmet` package. The protections this package provides to a back end are a little subtle and hard to explain, but it does protect against some kinds of cross origin attacks.  The helmet package provides a lot of protection for a front end server, which is not what we're building.  When you deploy your React application to the Internet, you can configure your Internet service with protections like what helmet provides.  We won't do that in this class.
+You'll also use the `helmet` package. Helmet provides subtle protections for back end servers, including some defense against cross-origin attacks. The helmet package provides a lot of protection for a front end server, which is not what we're building.  When you deploy your React application to the Internet, you can configure your Internet service with protections like what helmet provides.  We won't do that in this class.
 
 Let's see what you're going to need:
 

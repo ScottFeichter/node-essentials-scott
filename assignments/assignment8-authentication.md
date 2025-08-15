@@ -54,9 +54,9 @@ passport.use(
 
 The first argument passed, which is optional, is nowhere documented in Passport. This is, ahem, bad. That first object tells passport which values from a req object are to be used for authentication. The defaults are "username" and "password", but we are using "email" and "password", and we have to tell passport that, a fact which the developers elected not to disclose.  So, please try to remember this for the future.  
 
-The second argument is a function.  You are telling the passport local strategy to call this function at authentication time, so that you can do the authentication.  Your function, which might be async, is going to be passed the email, the password, and a callback.  Inside the function, you do the actual validation, using the verifyUserPassword function created previously.  Once the validation returns, you report the result via the callback.  The first argument to the callback is the error, if one was thrown, or null otherwise.  The second argument is the user object you got back from verifyUserPassword, if the verification succeeded, or null if it didn't, in which case you can also pass back a message.
+The second argument is a callback.  You are telling the passport local strategy to call this function at authentication time, so that you can do the authentication.  Your function, which might be async, is going to be passed the email, the password, and a callback.  Inside the function, you do the actual validation, using the verifyUserPassword function created previously.  Once the validation returns, you report the result via the callback.  The first argument to the callback is the error, if one was thrown, or null otherwise.  The second argument is the user object you got back from verifyUserPassword, if the verification succeeded, or null if it didn't, in which case you can also pass back a message.
 
-The verifyUserPassword function might throw an error, for example if the database is down. In this case, is very important to catch this error if it is thrown.  You will be in a callback from an Express route handler at this point.  An error thrown from within a callback crashes the Express server.
+The verifyUserPassword function might throw an error, for example if the database is down. It's important to catch this error inside your async callback, otherwise the Express server could crash.
 
 This is the Passport strategy you use at logon time.  
 
@@ -68,7 +68,7 @@ passport.authenticate("local", callback)
 
 **Note the following point carefully.**  What does the passport.authenticate() function return, actually?  The answer is, it returns **a middleware function**, the middleware to be used for the "local" strategy.  But the actual authentication hasn't occurred yet.  It doesn't happen until that middleware is called.
 
-We call the middleware function with a req and a res.  Passport doesn't care about most of the req.  All it's going to look at, in the case of the local strategy, is the body, and in particular, the email and password attributes of the body.  Also we need a res. Passport doesn't care about the res, so we can just pass {}.  Now suppose we have a user already registered, with email "jim@sample.com", and password "wX23-combo".  (You could run your server and do a Postman register request to set this up.)  For a little unit test, we could do the following.  Create a test folder, and within it a file called ppLocalUnitTest.js, with the following contents.
+We call the middleware function with a req and a res.  Passport doesn't care about most of the req.  All it's going to look at, in the case of the local strategy, is the body, and in particular, the email and password attributes of the body.  Also we need a res. Passport doesn't care about the res, so we can just pass {}.  Now suppose we have a user already registered, with email "jim@sample.com", and password "wX23-combo".  (You could run your server and do a Postman register request to set this up.)  For a little unit test, we could do the following.  Create a test folder, and within it a file called ppLocalUnitTest.js, with the following contents: 
 
 ```js
 require("../passport/passport");
@@ -87,7 +87,7 @@ const passportLocalMiddleware = passport.authenticate("local", reportPassportRes
 passportLocalMiddleware(req, {});
 ```
 
-And, lo and behold, we get the user information back, just as passport got it from the database.  If we specify a bad password, we get Authentication Failed.  And if the database is down, we get an error.  By the way, this is a good trick to learn: As you develop code, write unit tests for it.
+And, lo and behold, we receive the user information back, as returned from the database via Passport.  If we specify a bad password, we get Authentication Failed.  And if the database is down, we get an error.  By the way, this is a good trick to learn: As you develop code, write unit tests for it.
 
 The login() function in your user controller still uses the memory store, just to keep track of who is logged in.  You can now comment out that function.  Add a new route handler, this time in passport.js.  Here is what it should do:
 
@@ -109,9 +109,10 @@ const setJwtCookie = (req, res, user) => {
 };
 
 const logonRouteHandler = async (req, res, next) => {
-  const user = await new Promise((resolve) => {
+  let user;
+  user = await new Promise((resolve, reject) => {
     passport.authenticate("local", { session: false }, (err, user) => {
-      return err ? next(err) : resolve(user);
+      return err ? reject(err) : resolve(user);
     })(req, res);
   });
   if (!user) {
@@ -127,7 +128,7 @@ const logonRouteHandler = async (req, res, next) => {
 
 **There are a number of subtleties here.  Pay close attention.**  
 
-We need to set the cookie at logon time, to establish the session.  So, we create a signed JWT cookie.  The payload must contain the user.id, because we'll need to know who the user is on subsequent requests.  If it's in the cookie, we have the information we need.  We also put the csrfToken in the cookie.  We use a cryptographically random string.  We need the csrfToken in the cookie to protect against CSRF attack.  In the code above, we put in the user's name, which is not really necessary.  You could put other stuff in too, but a cookie should be kept small.  We set the JWT to expire in one hour.  As this back end is going to be at a different URL than the front end, the cookie is a cross-site cookie.  Browsers like Chrome discard cross site cookies unless the domain is set to match the domain of the back end, the secure flag is set, and the SameSite flag is set to "None".  We don't want JavaScript on the browser side to be able to see this cookie, so it has the HttpOnly flag.  The cookie expires when the JWT does, after one hour.  We sign the cookie with the secret.  That won't work until you set the JWT_SECRET in the .env:
+We need to set the cookie at logon time, to establish the session.  So, we create a signed JWT cookie.  The payload must contain the user.id, because we'll need to know who the user is on subsequent requests.  If it's in the cookie, we have the information we need.  We also put the csrfToken in the cookie.  We use a cryptographically random string.  We need the csrfToken in the cookie to protect against CSRF attacks.  In the code above, we put in the user's name, which is not really necessary.  You could put other stuff in too, but a cookie should be kept small.  We set the JWT to expire in one hour.  As this back end is going to be at a different URL than the front end, the cookie is a cross-site cookie.  Browsers like Chrome discard cross site cookies unless the domain is set to match the domain of the back end, the secure flag is set, and the SameSite flag is set to "None".  We don't want JavaScript on the browser side to be able to see this cookie, so it has the HttpOnly flag.  The cookie expires when the JWT does, after one hour.  We sign the cookie with the secret.  That won't work until you set the JWT_SECRET in the .env:
 
 JWT_SECRET=yLVNRLD35rNgnswAjyxxokZpdnUOqhlB
 
@@ -135,9 +136,34 @@ Because no one else has the secret, no one else can create a cookie the server w
 
 **However:** In the development environment, setting up HTTPS for your server is messy.  If you don't have HTTPS, Chrome and other browsers will discard any cookie with the secure flag set.  And if the secure flag is not set, browsers won't accept cookies with the domain set, or with SameSite: "None".  So, in the development environment, SameSite is set to "Lax", and the secure flag and the domain are not set for the cookie.  Now, if we turn these flags off, the browsers won't accept a cross-site cookie.  So, we set up the environment so that the browser doesn't know that it is a cross-site connection.  We'll use the Vite proxy for that in a later lesson.  Postman has the same limitations as the browsers do as far as what kind of cookie can be set without HTTPS.  But because Postman is not a browser, it doesn't know if a cookie is a cross-site cookie.  So that works too.
 
-At logon time, the logon route handler calls passport.authenticate to get the middleware function for the "local" strategy.  It then calls that middleware, and provides a callback.  In the code above, that callback is wrapped in a promise.  This is not really necessary -- we could do subsequent processing in the callback itself.  When the passport middleware function does the callback, it might return an error, for example if the database is down. Important! **Do not throw this error!**  That would crash the server.  Your error handler will not catch the error because it happens in a callback.  Instead, call next(err).  This calls the error handler.
+At logon time, the logon route handler calls passport.authenticate to get the middleware function for the "local" strategy.  It then calls that middleware, and provides a callback.  In the code above, that callback is wrapped in a promise.  This is one of two styles for handling callbacks.  When the passport middleware function does the callback, it might return an error, for example if the database is down.  We have to call either resolve() or reject(), else the promise is never resolved and the server hangs.  So we call reject() for the error case.  The reject causes an error to be thrown and the await to complete.  We do not have to catch this error, because it doesn't happen inside callback.  The error handler will catch it.
+
+Style two for handling the callback is as follows:
+
+```js
+const logonRouteHandler = async (req, res, next) => {
+  passport.authenticate("local", { session: false }, (err, user) => {
+    if (err) {
+      return next(err);  // don't throw the error!
+    } else {
+      if (!user) {
+        res
+          .status(StatusCodes.UNAUTHORIZED)
+          .json({ message: "Authentication failed" });
+      } else {
+        setJwtCookie(req, res, user);
+        res.json({ name: user.name, csrfToken: req.user.csrfToken });
+      }
+    }
+  })(req, res);
+};
+```
+
+Because the callback is not wrappered in a promise, we **must** catch the error if any is thrown.  No error can be thrown in this case, so we don't need a try/catch, but the callback might be passed an error.  If it is, we **must** call next(err) instead of throwing the error, if we are to pass the error to the error handler.  If an error is thrown from inside the callback, the server process will crash with an unhandled exception.  Note: For this style of callback handling, when `await logonRouteHandler(req, res, next);` returns, the response hasn't been sent yet.  We'll need to handle that problem when testing.  Note also that for this style, the route handler has to have a next parameter passed. 
 
 Finally, we have to include the csrfToken in what is sent back to the front end.  For CSRF protection, the front end has to include this token in each subsequent request.  We will put it in the X-CSRF-TOKEN header.
+
+For all protected routes (routes that require authentication), the frontend must include the CSRF token in the X-CSRF-TOKEN header. This includes any POST, PATCH, PUT, or DELETE requests to protected endpoints. Without this token, the request will be rejected with a 401 Unauthorized status.
 
 You got all that?
 
@@ -192,29 +218,31 @@ passportJWTMiddleware(req, {});
  You now have auth() middleware to check if the user is logged on, but it just checks a value in storage, which creates the problems described at the start of the lesson.  Add more code to the passport.js file to create this middleware:
 
 ```js
- const jwtMiddleware = async (req, res, next) => {
-  const user = await new Promise((resolve, reject) => {
-    passport.authenticate("jwt", { session: false }, (err, user) => {
-      return err ? next(err) : resolve(user);
-    })(req, res);
-  });
-  if (user) {
-    let loggedOn = true;
-    req.user = user;
-    if (["POST", "PATCH", "PUT", "DELETE", "CONNECT"].includes(req.method)) {
-      if (req.get("X-CSRF-TOKEN") != req.user.csrfToken) {
-        loggedOn = false;
+const jwtMiddleware = async (req, res, next) => {
+  passport.authenticate("jwt", { session: false, failWithError: false }, (err, user) => {
+    if (err) {
+      return next(err); // never happens!!
+    }
+    if (user) {
+      let loggedOn = true;
+      if (["POST", "PATCH", "PUT", "DELETE", "CONNECT"].includes(req.method)) {
+        if (req.get("X-CSRF-TOKEN") != user.csrfToken) {
+          loggedOn = false;
+        }
+      }
+      if (loggedOn) {
+        req.user = user;
+        return next();
       }
     }
-    if (loggedOn) return next();
-  }
-  res.status(StatusCodes.UNAUTHORIZED).json({ message: "Unauthorized" });
+    res.status(StatusCodes.UNAUTHORIZED).json({ message: "Unauthorized" });
+  })(req, res);
 };
 ```
 
-This calls the passport "jwt" strategy to determine if the JWT in the jwt cookie is valid.  If it is, we get the user object back.  We put that into req.user, so that it can be used for authorization decisions within protected routes.  But we still have to check the csrfToken.  We only care about that for certain request methods.  We don't need to check on a GET request.  If the token from the X-CSRF-TOKEN header doesn't match the one in the cookie, authentication fails.  If authentication succeeds, the middleware function calls next.
+This calls the passport "jwt" strategy to determine if the JWT in the jwt cookie is valid.  If it is, we get the user object back.  We put that into req.user, so that it can be used for authorization decisions within protected routes.  But we still have to check the csrfToken.  We only care about that for certain request methods.  We don't need to check on a GET request.  If the token from the X-CSRF-TOKEN header doesn't match the one in the cookie, authentication fails.  If authentication succeeds, the middleware function calls next.  The jwt strategy we defined never calls `done(err)` so we can never reach the next(err) line, but it's good to have it, in case someone changes the code in the strategy.  What passport-jwt is doing is calling `jwt.verify()` to make sure the jwt in the cookie is valid.  `jwt.verify()` might throw an error.  If the `failWithError` option is not set, passport-jwt responds with a 401 and it's own error message, and never calls the callback for `passport.authenticate()`.  We don't want that, as the error message might not be what we want. We set `failWithError` to false, which means that the callback happens, even if the jwt is bad.  If the jwt is not valid, the callback returns a null user object.  We might want to give different error messages depending on whether the jwt has a bad signature or has expired.  In that case we'd do `failWithError: true`, but we'd have to do some other kind of complicated stuff. The options, `session` and `failWithError` are nowhere documented in Passportjs.  You have to read the source code.  
 
-**An Aside about Postman:** It is not really clear here what value Postman is providing in our scenario.  If you moved the code from the "local" strategy into the logonRouteHandler, you wouldn't need to call Passport there.  And if you moved the code from the "jwt" strategy into the jwtMiddleware, you wouldn't have to call Passport there either.  If you look at usage statistics the npm website, you'll see that many many folks use Passport and the local and jwt plugins.  Somebody's getting value out of them, I guess.
+**An Aside about Passport:** It is not really clear here what value Passport is providing in our scenario, especially considering that the Passport documentation is atrocious.  If you moved the code from the "local" strategy into the logonRouteHandler, you wouldn't need to call Passport there.  And if you called jwt.verify() in jwtMiddleware, you wouldn't have to call Passport there either.  If you look at usage statistics on the npm website, you'll see that many many folks use Passport and the local and jwt plugins.  Somebody's getting value out of them, I guess.
 
 ## **Other Changes to Make Authentication Work**
 
@@ -239,7 +267,7 @@ The other change for logoff is to protect the logoff route.  This is being a lit
 
 ## **Testing with Postman**
 
-You should now test `/user/register` and `/user/logon` with Postman.  You should see two differences from previous behavior.  First, you should see the csrfToken being returned in the body of the request.  Second, you should see the jwt cookie being set.  However, none of your task routes will work, nor will your logoff route, because the csrfToken is not in the X-CSRF-TOKEN header.  Try them out to make sure this is true.
+You should now test `/user/register` and `/user/logon` with Postman.  You should see two differences from previous behavior.  First, you should see the csrfToken being returned in the body of the request.  Second, you should see the jwt cookie being set.  However, none of your task routes will work, nor will your logoff route, because the csrfToken is not in the X-CSRF-TOKEN header.  Try them out to make sure this is true.  
 
 You want to catch csrfToken when it is returned from a register or logon.  Open up the logon request in postman and you see a Tests tab.  Click on that, and plug in the following code:
 
@@ -315,7 +343,7 @@ Whew, just about done.
 
 ## **Run the TDD Test**
 
-Run `npm run tdd assignment8` to make sure all the tests work.
+Run `npm run tdd assignment8` to make sure all the tests work.  Then, stop your postgresql service, and from Postman, try a logon request.  You should see an Internal Server Error reported, and you should see in your server console a log record that connection to the database failed -- but the server process should not crash.
 
 ## **Submit Your Assignment on GitHub**
 
