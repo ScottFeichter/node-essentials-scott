@@ -10,9 +10,9 @@ You have started work on the application you'll use for your final project.  You
 
 For your final project, you'll have users with todo lists.  A user will be able to register with the application, log on, and create, modify, and delete tasks in their todo lists.  You'll now create the route that does the register.  That's a POST operation for the '/user' path.  Add that to app.js, before the 404 handler.  For now, you can just have it return a message.
 
-You can't test this with the browser.  Browsers send GET requests, and only do POSTs from within forms.  Postman is the tool you'll use.  Start it up.  On the upper left hand side, you see a `new` button.  Create a new collection, called `node-homework`.  On the upper right hand side, you see an icon that is a rectangle with a little eye.  No, it doesn't mean the Illumnati.  This is the Postman environment.  Create an enviroment variable called host, with a value of `http://localhost:3000`.  This is the base URL for your requests.  When it comes time to test your application as it is deployed on the internet, you can just change this environment variable.
+You can't test this with the browser.  Browsers send GET requests, and only do POSTs from within forms.  Postman is the tool you'll use.  Start it up.  On the upper left hand side, you see a `new` button.  Create a new collection, called `node-homework`.  On the upper right hand side, you see an icon that is a rectangle with a little eye.  No, it doesn't mean the Illuminati.  This is the Postman environment.  Create an environment variable called host, with a value of `http://localhost:3000`.  This is the base URL for your requests.  When it comes time to test your application as it is deployed on the internet, you can just change this environment variable.
 
-Hover over the node-homework collection and you'll see three dots. Click on those, and select 'add request'.  Give it a name, perhaps `register`.  A new request, by default, is a GET, but there is a pulldown to switch it to POST.  Save the requestn, and then send it.  If your Express app is running, you should see your message come back.  Of course, to create a user record, you need data in the body of the request.  So, click on the body tab for the request.  Select the `raw` option.  There's a pulldown to the right that says `Text`.  Click on that, and choose the JSON option.  Then, put JSON in for the user you want to create.  You need a name, an email, and a password.  Remember that this is JSON, not a JavaScript object, so you have to have double quotes around the attribute names and string values.  Save the request again, and then send it.  The result is the same of course -- the request handler doesn't do more than send a message at the moment.
+Hover over the node-homework collection and you'll see three dots. Click on those, and select 'add request'.  Give it a name, perhaps `register`.  A new request, by default, is a GET, but there is a pulldown to switch it to POST.  Save the request, and then send it.  If your Express app is running, you should see your message come back.  Of course, to create a user record, you need data in the body of the request.  So, click on the body tab for the request.  Select the `raw` option.  There's a pulldown to the right that says `Text`.  Click on that, and choose the JSON option.  Then, put JSON in for the user you want to create.  You need a name, an email, and a password.  Remember that this is JSON, not a JavaScript object, so you have to have double quotes around the attribute names and string values.  Save the request again, and then send it.  The result is the same of course -- the request handler doesn't do more than send a message at the moment.
 
 Go back to app.js.  You need to be able to get the body of the request.  For that you need middleware, in this case middleware that Express provides.  Add this line above your other routes:
 
@@ -31,7 +31,7 @@ app.post("/user", (req, res)=>{
 });
 ```
 
-Then try the Postman request again.  You see the body in your server log, but you are still just sending back a message.  What you should do for this request is store the user record.  Eventually you'll store it in a database, but we haven't learned how to do that yet.  So, for the moment, you can just store it in memory.  Create a directory called util, and a file within it called memoryStore.js.  There's not much to this file:
+Then try the Postman request again.  You see the body in your server log, but you are still just sending back a message.  What you should do for this request is store the user record.  Eventually you'll store it in a database, but we haven't learned how to do that yet.  So, for the moment, you can just store it in memory.  Create a directory named util, and a file within it called memoryStore.js.  There's not much to this file:
 
 ```js
 const storedUsers = [];
@@ -73,7 +73,7 @@ Test this with your Postman request.
 
 Let's list all the hokey things you just did.
 
-1. No validation.  You don't know if there was a valid body.  Hopefully your Postman request did send one.
+1. There is no validation.  You don't know if there was a valid body.  Hopefully your Postman request did send one.
 
 2. You stored to memory.  When you restart the server, the data's gone.  Your users will not be happy.
 
@@ -104,7 +104,7 @@ The show function returns a single task, and the index function returns all the 
 
 When creating a new record, it is standard practice to return the object just created, but of course, you don't want to send back the password.
 
-Change the code in for the route as follows:
+Change the code for the route as follows:
 
 ```js
 const { register } = require("./controllers/userController");
@@ -204,7 +204,7 @@ The dogs are counting on you.
          "dogName": "Luna"
        }
        ```
-  Here `{{host}}` is a Postman environment variable you should configure.  It should be set to `http://localhost:/3000`.  You'll do manual testing with Postman.
+  Here `{{host}}` is a Postman environment variable you should configure.  It should be set to `http://localhost:3000`.  You'll do manual testing with Postman.
 
 5. Get coding!
 
