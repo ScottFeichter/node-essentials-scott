@@ -329,6 +329,9 @@ await prisma.user.delete({
 - **`select`**: Fields to return (optional)
 - **`include`**: Related data to fetch (optional)
 
+**Important Note on Where Clauses:**
+When using `update()` or `delete()` operations, the `where` clause must contain exactly one unique identifier (like `id` or `email`). If you need to update or delete multiple records based on multiple conditions, use `updateMany()` or `deleteMany()` instead. The error "Argument `where` of type TaskWhereUniqueInput needs exactly one argument..." occurs when you try to use multiple conditions in a `where` clause for single-record operations.
+
 **Example with All Components:**
 ```javascript
 const userWithTasks = await prisma.user.findUnique({

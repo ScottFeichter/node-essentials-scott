@@ -102,7 +102,7 @@ exports.update = async (req, res) => {
 
     const { title, isCompleted } = value;
     
-    const updatedTask = await prisma.task.update({
+    const result = await prisma.task.updateMany({
       where: { 
         id: parseInt(id),
         userId: parseInt(user_id)
@@ -110,7 +110,14 @@ exports.update = async (req, res) => {
       data: { title, isCompleted }
     });
     
-    res.status(200).json(updatedTask);
+    if (result.count === 0) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+    
+    res.status(200).json({ 
+      message: "Task updated successfully",
+      count: result.count 
+    });
   } catch (err) {
     if (err.code === 'P2025') {
       return res.status(404).json({ error: "Task not found" });
@@ -128,14 +135,21 @@ exports.deleteTask = async (req, res) => {
       return res.status(401).json({ error: "User ID required" });
     }
 
-    await prisma.task.delete({
+    const result = await prisma.task.deleteMany({
       where: { 
         id: parseInt(id),
         userId: parseInt(user_id)
       }
     });
     
-    res.status(200).json({ message: "Task deleted successfully" });
+    if (result.count === 0) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+    
+    res.status(200).json({ 
+      message: "Task deleted successfully",
+      count: result.count 
+    });
   } catch (err) {
     if (err.code === 'P2025') {
       return res.status(404).json({ error: "Task not found" });
