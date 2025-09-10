@@ -219,7 +219,7 @@ exports.update = async (req, res) => {
 
     const { title, isCompleted, priority } = value;
     
-    const updatedTask = await prisma.task.update({
+    const result = await prisma.task.updateMany({
       where: { 
         id: parseInt(id),
         userId: userId
@@ -227,11 +227,17 @@ exports.update = async (req, res) => {
       data: { title, isCompleted, priority }
     });
     
-    res.status(200).json(updatedTask);
-  } catch (err) {
-    if (err.code === 'P2025') {
+    if (result.count === 0) {
       return res.status(404).json({ error: "Task not found" });
     }
+    
+    // Fetch the updated task to return it
+    const updatedTask = await prisma.task.findUnique({
+      where: { id: parseInt(id) }
+    });
+    
+    res.status(200).json(updatedTask);
+  } catch (err) {
     console.error('Update task error:', err);
     res.status(500).json({ error: err.message });
   }
@@ -240,21 +246,22 @@ exports.update = async (req, res) => {
 exports.deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
-    
+    console.log(id);
     const userId = req.user.id;
 
-    await prisma.task.delete({
+    const result = await prisma.task.deleteMany({
       where: { 
         id: parseInt(id),
         userId: userId
       }
     });
     
-    res.status(200).json({ message: "Task deleted successfully" });
-  } catch (err) {
-    if (err.code === 'P2025') {
+    if (result.count === 0) {
       return res.status(404).json({ error: "Task not found" });
     }
+    
+    res.status(200).json({ message: "Task deleted successfully" });
+  } catch (err) {
     console.error('Delete task error:', err);
     res.status(500).json({ error: err.message });
   }
