@@ -1,5 +1,6 @@
 const prisma = require('../prisma/db');
 const userSchema = require("../validation/userSchema").userSchema;
+const crypto = require('crypto');
 
 exports.register = async (req, res) => {
   try {
@@ -23,11 +24,17 @@ exports.register = async (req, res) => {
       return res.status(409).json({ error: "User already exists" });
     }
 
+    // Hash the password before storing (using scrypt from lesson 4)
+    const hashedPassword = crypto.scryptSync(password, 'salt', 64).toString('hex');
+
     // Create new user
     const newUser = await prisma.user.create({
-      data: { email, name, password },
+      data: { email, name, password: hashedPassword },
       select: { id: true, email: true, name: true }
     });
+    
+    // Store the user ID globally for session management (not secure for production)
+    global.user_id = newUser.id;
     
     res.status(201).json({ 
       message: "User registered successfully",
@@ -46,14 +53,25 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    // Find user
-    const user = await prisma.user.findFirst({
-      where: { email, password }
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email }
     });
     
     if (!user) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
+    
+    // Compare hashed password
+    const hashedInputPassword = crypto.scryptSync(password, 'salt', 64).toString('hex');
+    const isValidPassword = hashedInputPassword === user.password;
+    
+    if (!isValidPassword) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+    
+    // Store user ID globally for session management (not secure for production)
+    global.user_id = user.id;
     
     res.status(200).json({ 
       message: "Login successful",

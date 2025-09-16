@@ -1,5 +1,6 @@
 const pool = require('../db');
 const userSchema = require("../validation/userSchema").userSchema;
+const crypto = require('crypto');
 
 exports.register = async (req, res) => {
   try {
@@ -20,11 +21,17 @@ exports.register = async (req, res) => {
       return res.status(409).json({ error: "User already exists" });
     }
 
+    // Hash the password before storing (using scrypt from lesson 4)
+    const hashedPassword = crypto.scryptSync(password, 'salt', 64).toString('hex');
+
     // Create new user
     const result = await pool.query(
       'INSERT INTO users (email, name, password) VALUES ($1, $2, $3) RETURNING id, email, name',
-      [email, name, password]
+      [email, name, hashedPassword]
     );
+    
+    // Store the user ID globally for session management (not secure for production)
+    global.user_id = result.rows[0].id;
     
     res.status(201).json({ 
       message: "User registered successfully",
@@ -43,14 +50,25 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    // Find user
-    const result = await pool.query('SELECT * FROM users WHERE email = $1 AND password = $2', [email, password]);
+    // Find user by email
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     
     if (result.rows.length === 0) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
     const user = result.rows[0];
+    
+    // Compare hashed password
+    const hashedInputPassword = crypto.scryptSync(password, 'salt', 64).toString('hex');
+    const isValidPassword = hashedInputPassword === user.password;
+    
+    if (!isValidPassword) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+    
+    // Store user ID globally for session management (not secure for production)
+    global.user_id = user.id;
     
     res.status(200).json({ 
       message: "Login successful",

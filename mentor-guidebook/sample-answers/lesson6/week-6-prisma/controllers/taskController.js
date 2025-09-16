@@ -3,14 +3,13 @@ const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
 
 exports.index = async (req, res) => {
   try {
-    const { user_id } = req.query;
-    
-    if (!user_id) {
-      return res.status(401).json({ error: "User ID required" });
+    // Use global user_id (set during login/registration)
+    if (!global.user_id) {
+      return res.status(401).json({ error: "User not logged in" });
     }
 
     const tasks = await prisma.task.findMany({
-      where: { userId: parseInt(user_id) }
+      where: { userId: global.user_id }
     });
     
     if (tasks.length === 0) {
@@ -26,16 +25,16 @@ exports.index = async (req, res) => {
 exports.show = async (req, res) => {
   try {
     const { id } = req.params;
-    const { user_id } = req.query;
     
-    if (!user_id) {
-      return res.status(401).json({ error: "User ID required" });
+    // Use global user_id (set during login/registration)
+    if (!global.user_id) {
+      return res.status(401).json({ error: "User not logged in" });
     }
 
     const task = await prisma.task.findFirst({
       where: { 
         id: parseInt(id), 
-        userId: parseInt(user_id) 
+        userId: global.user_id 
       }
     });
     
@@ -51,10 +50,9 @@ exports.show = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const { user_id } = req.query;
-    
-    if (!user_id) {
-      return res.status(401).json({ error: "User ID required" });
+    // Use global user_id (set during login/registration)
+    if (!global.user_id) {
+      return res.status(401).json({ error: "User not logged in" });
     }
 
     const { error, value } = taskSchema.validate(req.body);
@@ -72,7 +70,7 @@ exports.create = async (req, res) => {
       data: {
         title,
         isCompleted,
-        userId: parseInt(user_id)
+        userId: global.user_id
       }
     });
     
@@ -85,10 +83,10 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { user_id } = req.query;
     
-    if (!user_id) {
-      return res.status(401).json({ error: "User ID required" });
+    // Use global user_id (set during login/registration)
+    if (!global.user_id) {
+      return res.status(401).json({ error: "User not logged in" });
     }
 
     const { error, value } = patchTaskSchema.validate(req.body);
@@ -105,7 +103,7 @@ exports.update = async (req, res) => {
     const result = await prisma.task.updateMany({
       where: { 
         id: parseInt(id),
-        userId: parseInt(user_id)
+        userId: global.user_id
       },
       data: { title, isCompleted }
     });
@@ -129,16 +127,16 @@ exports.update = async (req, res) => {
 exports.deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const { user_id } = req.query;
     
-    if (!user_id) {
-      return res.status(401).json({ error: "User ID required" });
+    // Use global user_id (set during login/registration)
+    if (!global.user_id) {
+      return res.status(401).json({ error: "User not logged in" });
     }
 
     const result = await prisma.task.deleteMany({
       where: { 
         id: parseInt(id),
-        userId: parseInt(user_id)
+        userId: global.user_id
       }
     });
     

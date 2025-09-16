@@ -3,13 +3,12 @@ const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
 
 exports.index = async (req, res) => {
   try {
-    const { user_id } = req.query; // You'll need to pass user_id in query or use session
-    
-    if (!user_id) {
-      return res.status(401).json({ error: "User ID required" });
+    // Use global user_id (set during login/registration)
+    if (!global.user_id) {
+      return res.status(401).json({ error: "User not logged in" });
     }
 
-    const result = await pool.query('SELECT * FROM tasks WHERE user_id = $1', [user_id]);
+    const result = await pool.query('SELECT * FROM tasks WHERE user_id = $1', [global.user_id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "No tasks found for user" });
@@ -24,13 +23,13 @@ exports.index = async (req, res) => {
 exports.show = async (req, res) => {
   try {
     const { id } = req.params;
-    const { user_id } = req.query;
     
-    if (!user_id) {
-      return res.status(401).json({ error: "User ID required" });
+    // Use global user_id (set during login/registration)
+    if (!global.user_id) {
+      return res.status(401).json({ error: "User not logged in" });
     }
 
-    const result = await pool.query('SELECT * FROM tasks WHERE id = $1 AND user_id = $2', [id, user_id]);
+    const result = await pool.query('SELECT * FROM tasks WHERE id = $1 AND user_id = $2', [id, global.user_id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Task not found" });
@@ -44,10 +43,9 @@ exports.show = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const { user_id } = req.query;
-    
-    if (!user_id) {
-      return res.status(401).json({ error: "User ID required" });
+    // Use global user_id (set during login/registration)
+    if (!global.user_id) {
+      return res.status(401).json({ error: "User not logged in" });
     }
 
     const { error, value } = taskSchema.validate(req.body);
@@ -63,7 +61,7 @@ exports.create = async (req, res) => {
     
     const result = await pool.query(
       'INSERT INTO tasks (title, is_completed, user_id) VALUES ($1, $2, $3) RETURNING *',
-      [title, isCompleted, user_id]
+      [title, isCompleted, global.user_id]
     );
     
     res.status(201).json(result.rows[0]);
@@ -75,10 +73,10 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { user_id } = req.query;
     
-    if (!user_id) {
-      return res.status(401).json({ error: "User ID required" });
+    // Use global user_id (set during login/registration)
+    if (!global.user_id) {
+      return res.status(401).json({ error: "User not logged in" });
     }
 
     const { error, value } = patchTaskSchema.validate(req.body);
@@ -96,17 +94,17 @@ exports.update = async (req, res) => {
     if (title !== undefined && isCompleted !== undefined) {
       result = await pool.query(
         'UPDATE tasks SET title = $1, is_completed = $2 WHERE id = $3 AND user_id = $4 RETURNING *',
-        [title, isCompleted, id, user_id]
+        [title, isCompleted, id, global.user_id]
       );
     } else if (title !== undefined) {
       result = await pool.query(
         'UPDATE tasks SET title = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
-        [title, id, user_id]
+        [title, id, global.user_id]
       );
     } else if (isCompleted !== undefined) {
       result = await pool.query(
         'UPDATE tasks SET is_completed = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
-        [isCompleted, id, user_id]
+        [isCompleted, id, global.user_id]
       );
     }
     
@@ -123,13 +121,13 @@ exports.update = async (req, res) => {
 exports.deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const { user_id } = req.query;
     
-    if (!user_id) {
-      return res.status(401).json({ error: "User ID required" });
+    // Use global user_id (set during login/registration)
+    if (!global.user_id) {
+      return res.status(401).json({ error: "User not logged in" });
     }
 
-    const result = await pool.query('DELETE FROM tasks WHERE id = $1 AND user_id = $2 RETURNING *', [id, user_id]);
+    const result = await pool.query('DELETE FROM tasks WHERE id = $1 AND user_id = $2 RETURNING *', [id, global.user_id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Task not found" });
