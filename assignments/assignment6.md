@@ -40,6 +40,8 @@ DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/yourdatabase
 PORT=3000
 ```
 
+**Note:** The PostgreSQL URL format may vary depending on your operating system. For detailed information about different URL formats for Windows, Mac, and Linux, see Assignment 0.
+
 #### c. Create Database Tables
 Create a file called `schema.sql` with the following tables:
 
@@ -49,7 +51,7 @@ CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
   name VARCHAR(30) NOT NULL,
-  password VARCHAR(255) NOT NULL,
+  hashedPassword VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -171,7 +173,7 @@ Implement the following database operations:
 
 **User Registration:**
 ```sql
-INSERT INTO users (email, name, password) VALUES ($1, $2, $3) RETURNING id, email, name
+INSERT INTO users (email, name, hashedPassword) VALUES ($1, $2, $3) RETURNING id, email, name
 ```
 
 **User Login:**
@@ -402,6 +404,8 @@ DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/yourdatabase?sch
 PORT=3000
 ```
 
+**Note:** The PostgreSQL URL format may vary depending on your operating system. For detailed information about different URL formats for Windows, Mac, and Linux, see Assignment 0.
+
 **Requirements:**
 - Use the same database from Assignment 6a
 - Include the `?schema=public` parameter for Prisma
@@ -427,7 +431,7 @@ model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   name      String
-  password  String
+  hashedPassword  String
   tasks     Task[]
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -506,7 +510,7 @@ const crypto = require('crypto');
 const hashedPassword = crypto.scryptSync(password, 'salt', 64).toString('hex');
 
 const newUser = await prisma.user.create({
-  data: { email, name, password: hashedPassword },
+  data: { email, name, hashedPassword: hashedPassword },
   select: { id: true, email: true, name: true }
 });
 

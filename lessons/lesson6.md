@@ -151,6 +151,8 @@ DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/your_app_name
 PORT=3000
 ```
 
+**Note:** The PostgreSQL URL format may vary depending on your operating system. For detailed information about different URL formats for Windows, Mac, and Linux, see Assignment 0.
+
 **Security Note:** Never commit your `.env` file to version control. It contains sensitive information like passwords.
 
 ---
@@ -169,7 +171,7 @@ CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
   name VARCHAR(30) NOT NULL,
-  password VARCHAR(255) NOT NULL,
+  hashedPassword VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
@@ -263,7 +265,7 @@ const crypto = require('crypto');
 const hashedPassword = crypto.scryptSync(password, 'salt', 64).toString('hex');
 
 const result = await pool.query(
-  'INSERT INTO users (email, name, password) VALUES ($1, $2, $3) RETURNING id, email, name',
+  'INSERT INTO users (email, name, hashedPassword) VALUES ($1, $2, $3) RETURNING id, email, name',
   [email, name, hashedPassword]
 );
 
@@ -714,7 +716,7 @@ Update your `.env` file to include the Prisma-specific DATABASE_URL:
 DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/yourdatabase?schema=public"
 ```
 
-**Note:** The `?schema=public` parameter tells Prisma which database schema to use.
+**Note:** The `?schema=public` parameter tells Prisma which database schema to use. The PostgreSQL URL format may vary depending on your operating system. For detailed information about different URL formats for Windows, Mac, and Linux, see Assignment 0.
 
 ---
 
@@ -748,7 +750,7 @@ model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   name      String
-  password  String
+  hashedPassword  String
   tasks     Task[]
   createdAt DateTime @default(now()) @map("created_at")
   
@@ -916,7 +918,7 @@ if (existingUser.rows.length > 0) {
 }
 
 const result = await pool.query(
-  'INSERT INTO users (email, name, password) VALUES ($1, $2, $3) RETURNING id, email, name',
+  'INSERT INTO users (email, name, hashedPassword) VALUES ($1, $2, $3) RETURNING id, email, name',
   [email, name, password]
 );
 const newUser = result.rows[0];
@@ -936,7 +938,7 @@ const crypto = require('crypto');
 const hashedPassword = crypto.scryptSync(password, 'salt', 64).toString('hex');
 
 const newUser = await prisma.user.create({
-  data: { email, name, password: hashedPassword },
+  data: { email, name, hashedPassword: hashedPassword },
   select: { id: true, email: true, name: true }
 });
 

@@ -29,7 +29,7 @@ exports.register = async (req, res) => {
 
     // Create new user
     const newUser = await prisma.user.create({
-      data: { email, name, password: hashedPassword },
+      data: { email, name, hashedPassword: hashedPassword },
       select: { id: true, email: true, name: true }
     });
     
@@ -64,7 +64,7 @@ exports.login = async (req, res) => {
     
     // Compare hashed password
     const hashedInputPassword = crypto.scryptSync(password, 'salt', 64).toString('hex');
-    const isValidPassword = hashedInputPassword === user.password;
+    const isValidPassword = hashedInputPassword === user.hashedPassword;
     
     if (!isValidPassword) {
       return res.status(401).json({ error: "Invalid credentials" });

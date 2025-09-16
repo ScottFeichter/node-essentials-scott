@@ -26,7 +26,7 @@ exports.register = async (req, res) => {
 
     // Create new user
     const result = await pool.query(
-      'INSERT INTO users (email, name, password) VALUES ($1, $2, $3) RETURNING id, email, name',
+      'INSERT INTO users (email, name, hashedPassword) VALUES ($1, $2, $3) RETURNING id, email, name',
       [email, name, hashedPassword]
     );
     
@@ -61,7 +61,7 @@ exports.login = async (req, res) => {
     
     // Compare hashed password
     const hashedInputPassword = crypto.scryptSync(password, 'salt', 64).toString('hex');
-    const isValidPassword = hashedInputPassword === user.password;
+    const isValidPassword = hashedInputPassword === user.hashedPassword;
     
     if (!isValidPassword) {
       return res.status(401).json({ error: "Invalid credentials" });
