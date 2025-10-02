@@ -14,10 +14,8 @@
 
 1. What is Node?
 2. Running Node
-3. Syntax differences between Node and browser side JavaScript
-4. Other Important Differences between Node and Browser JavaScript
-5. File System Access with Async Operations
-6. More on Async Functions
+3. File System Access with Async Operations
+4. More on Async Functions
 
 ## **1.0 What is Node**
 
@@ -90,26 +88,26 @@ At your terminal, type `Node` and press return.  (You should have completed the 
 
 This starts the environment, and you can enter and run JS statements in the terminal.
 
-"4 + 4" is valid JS so go ahead and type it then press return.
+`4 + 4` is valid JS so go ahead and type it then press return.
 
 
 ### undefined
 
-Now type "let eight = 4 + 4;" and press enter.
+Now type `let eight = 4 + 4;` and press enter.
 
-When you use Node in the terminal you will often see "undefined" when you press return.
+When you use Node in the terminal you will often see `undefined` when you press return.
 
 This occurs when the JS you entered does not have a return statement.
 
 Often you will ignore this undefined.
 
-Now enter "console.log(eight);" and press return.
+Now enter `console.log(eight);` and press return.
 
 You will get the value 8 then below it the word undefined.
 
-When you entered "4 + 4" and pressed return you only got 8 (not undefined).
+When you entered `4 + 4` and pressed return you only got 8 (not undefined).
 
-This is because 4 + 4 is an operation that returns the sum.
+This is because `4 + 4` is an operation that returns the sum.
 
 This undefined that occurs often when running Node in terminal is just a quirky part of the program.
 
@@ -157,20 +155,23 @@ Create a file called myFirstNode.js.
 
 Inside the file enter the following:
 
-"This is my first program with node!"
+```javascript
+"This is my first program with node!";
 
-console.log(No wait, THIS is my first program with node!!!);
+console.log("No, wait, THIS is my first program with node!");
+```
 
 Save the file.
 
-Find the file path.
+Run it from terminal: `node myFirstNode.js`
 
+### Exiting the Node REPL
 
-## .exit
+To exit the Node REPL, type `.exit` or press Ctrl+C twice.
 
 ## **1.3 Misc**
 
-## General Language Info
+### General Language Info
 
 A common pattern you will find is that each language has similar components.
 
@@ -186,4 +187,6 @@ And to compare the naming theme of node components to Ruby language Ruby has the
 
 Another example the Rust programming language calls its code libraries crates which would be equivalent to packages in node.
 
-## Scripting Languages
+### Scripting Languages
+
+Node.js is considered a scripting language runtime, meaning it can execute scripts directly without compilation.
