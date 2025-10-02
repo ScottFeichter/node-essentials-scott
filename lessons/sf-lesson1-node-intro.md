@@ -29,9 +29,9 @@ As such, JS is restricted what it can do when running in the browser - for examp
 
 Node.js is an application created to run JS on your machine outside the browser.
 
-This allowed JS to be used for many more tasks besides responsive web applications.
+This allowed JS to be used for many more tasks beyond responsive web applications.
 
-With Node, you can do anything that one could do in other programming languages, subject only to the security protections provided by the operating system.
+With Node, one can do essentially anything that can be done in other programming languages, subject only to the security protections provided by the operating system.
 
 ## **4.1 Asynchronous Programming**
 
@@ -61,7 +61,7 @@ A queue is a data structure just like the waiting line that forms when you go to
 
 The sequence of a queue is Last In First Out (LIFO).
 
-In node when the call stack finishes all of it's operations it then begins processing ready instructions from the event loop.
+In node when the call stack finishes all of it's operations it then begins processing instructions from the queues in the event loop.
 
 ### Non Blocking
 
@@ -69,7 +69,7 @@ Even though node can only run one instruction at a time the event loop prevents 
 
 The event loop allows many instructions performed asyncronysouly.
 
-This makes the node environment more performant for some applications than would be in Python or Ruby.
+This makes the node environment more performant for some things than would be in Python or Ruby.
 
 Here is a basic video summary of node capabilities: [What is Node.js?](https://youtu.be/uVwtVBpw7RQ)
 
@@ -86,7 +86,25 @@ Therefore to utilize it directly you must use the command line.
 
 At your terminal, type `Node`.  (You should have completed the setup assignment.  If this command doesn't do anything, go back and do the setup.)
 
-This starts the environment, and you can enter and run JavaScript statements.  Try a console.log().  You may notice one difference from the browser environment.  Where does the output appear?  It appears in your terminal.  Obvious, right?  If you open up the console in your browser developer tools, you will not see the output for Node console.log() statements.  We have had some folks fresh from the React class who develop a Node/Express application, put console.log() debugging statements in, and go to the browser console to see them.
+This starts the environment, and you can enter and run JavaScript statements.
+
+### Node.js vs The Browser
+
+We have established that Node.js runs JS on your machine outside the browser.
+
+In other words it is a JS run time environment.
+
+In your terminal in the node environment try a console.log().
+
+You may notice one difference from the browser environment.
+
+Where does the output appear? It appears in your terminal.  Obvious, right?
+
+However, if you open up the console in your browser developer tools, you will not see the output for Node console.log() statements.
+
+
+
+We have had some folks fresh from the React class who develop a Node/Express application, put console.log() debugging statements in, and go to the browser console to see them.
 
 You should have set up your `node-homework` repository and folder.  In the terminal, cd to that folder and start VSCode.  Create a first.js file in the assignment1 directory, with a console.log() statement in it.  Start a VSCode terminal, and type "node ./assignment1/first".  This is how you tell Node to start a program you write.  You do not have to give the `.js` extension.  Ok, so much for the very simple stuff.
 
