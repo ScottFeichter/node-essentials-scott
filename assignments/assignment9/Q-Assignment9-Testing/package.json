@@ -1,0 +1,37 @@
+{
+  "name": "assignment9-testing",
+  "version": "1.0.0",
+  "description": "Assignment 9: Automated Testing",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "NODE_ENV=test jest --testPathPatterns=test/ --verbose --maxWorkers=1"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "http-status-codes": "^2.2.0",
+    "joi": "^17.13.3",
+    "dotenv": "^16.3.1",
+    "prisma": "^5.7.0",
+    "@prisma/client": "^5.7.0",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
+    "passport-jwt": "^4.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "express-xss-sanitizer": "^1.2.0",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "node-mocks-http": "^1.13.0",
+    "eslint-plugin-jest": "^27.6.0",
+    "globals": "^13.24.0",
+    "cookies": "^0.8.0"
+  }
+}

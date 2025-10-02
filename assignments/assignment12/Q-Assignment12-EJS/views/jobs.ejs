@@ -1,0 +1,48 @@
+<%- include("partials/head.ejs") %>
+<%- include("partials/header.ejs") %>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>My Jobs</h2>
+  <div>
+    <a href="/jobs/new" class="btn btn-success">Add New Job</a>
+    <a href="/logout" class="btn btn-outline-secondary">Logout</a>
+  </div>
+</div>
+
+<% if (jobs && jobs.length > 0) { %>
+  <div class="row">
+    <% jobs.forEach((job) => { %>
+      <div class="col-md-6 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title"><%= job.position %></h5>
+            <h6 class="card-subtitle mb-2 text-muted"><%= job.company %></h6>
+            <p class="card-text">
+              <span class="badge bg-<%= job.status === 'pending' ? 'warning' : job.status === 'interview' ? 'info' : 'danger' %>">
+                <%= job.status %>
+              </span>
+            </p>
+            <p class="card-text">
+              <small class="text-muted">Created: <%= new Date(job.createdAt).toLocaleDateString() %></small>
+            </p>
+            <div class="btn-group" role="group">
+              <a href="/jobs/<%= job._id %>/edit" class="btn btn-sm btn-outline-primary">Edit</a>
+              <form method="POST" action="/jobs/<%= job._id %>/delete" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                        onclick="return confirm('Are you sure?')">Delete</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } else { %>
+  <div class="text-center mt-5">
+    <h4>No jobs found</h4>
+    <p>Start by adding your first job application!</p>
+    <a href="/jobs/new" class="btn btn-primary">Add Your First Job</a>
+  </div>
+<% } %>
+
+<%- include("partials/footer.ejs") %>

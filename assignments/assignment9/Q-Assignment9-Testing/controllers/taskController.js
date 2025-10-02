@@ -1,0 +1,104 @@
+const { StatusCodes } = require("http-status-codes");
+const prisma = require("../prisma/db");
+const { taskSchema, patchTaskSchema } = require("../validation/taskSchema");
+
+const create = async (req, res) => {
+  if (!req.body) req.body = {};
+  
+  const { error, value } = taskSchema.validate(req.body, { abortEarly: false });
+  
+  if (error) {
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: error.message });
+  }
+  
+  const newTask = await prisma.task.create({
+    data: {
+      title: value.title,
+      isCompleted: value.isCompleted || false,
+      priority: value.priority || 'medium',
+      userId: req.user.id
+    }
+  });
+  
+  res.status(StatusCodes.CREATED).json(newTask);
+};
+
+const index = async (req, res) => {
+  const tasks = await prisma.task.findMany({
+    where: { userId: req.user.id }
+  });
+  
+  if (tasks.length === 0) {
+    return res.status(StatusCodes.NOT_FOUND).json({ message: "No tasks found" });
+  }
+  
+  res.json(tasks);
+};
+
+const show = async (req, res) => {
+  const taskId = parseInt(req.params.id);
+  
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      userId: req.user.id
+    }
+  });
+  
+  if (!task) {
+    return res.sendStatus(StatusCodes.NOT_FOUND);
+  }
+  
+  res.json(task);
+};
+
+const update = async (req, res) => {
+  if (!req.body) req.body = {};
+  
+  const { error, value } = patchTaskSchema.validate(req.body, { abortEarly: false });
+  
+  if (error) {
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: error.message });
+  }
+  
+  const taskId = parseInt(req.params.id);
+  
+  try {
+    const updatedTask = await prisma.task.update({
+      where: {
+        id: taskId,
+        userId: req.user.id
+      },
+      data: value
+    });
+    
+    res.json(updatedTask);
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.sendStatus(StatusCodes.NOT_FOUND);
+    }
+    throw error;
+  }
+};
+
+const deleteTask = async (req, res) => {
+  const taskId = parseInt(req.params.id);
+  
+  try {
+    const deletedTask = await prisma.task.delete({
+      where: {
+        id: taskId,
+        userId: req.user.id
+      }
+    });
+    
+    res.json(deletedTask);
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.sendStatus(StatusCodes.NOT_FOUND);
+    }
+    throw error;
+  }
+};
+
+module.exports = { create, index, show, update, deleteTask };

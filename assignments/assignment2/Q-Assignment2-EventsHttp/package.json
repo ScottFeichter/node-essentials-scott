@@ -1,0 +1,17 @@
+{
+  "name": "assignment2-events-http",
+  "version": "1.0.0",
+  "description": "Assignment 2: Event Handlers, HTTP Servers, and Express",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "http-status-codes": "^2.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
