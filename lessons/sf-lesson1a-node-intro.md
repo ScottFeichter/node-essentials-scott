@@ -5,10 +5,9 @@
 **Learning objective**:
 
 - Node vs Browser
-- Node event loop
+- Node call stack
+- Asynchronous programming and the Node event loop
 - File system access
-- HTTP servers
-- Asynchronous programming
 
 **Topics**:
 
@@ -59,13 +58,13 @@ A queue is a data structure just like the waiting line that forms when you go to
 
 The sequence of a queue is First In First Out (FIFO).
 
-In node when the call stack finishes all of it's instructions it then begins processing instructions from the queues in the event loop.
+When the call stack finishes all of it's instructions node then begins processing instructions from the queues in the event loop.
 
 ### Non Blocking
 
 Even though node can only run one instruction at a time the event loop prevents pending operations from blocking the program.
 
-The event loop allows many instructions performed asynchronously.
+The event loop allows many instructions to be performed asynchronously.
 
 This makes the node environment more performant for some things than would be in Python or Ruby.
 
