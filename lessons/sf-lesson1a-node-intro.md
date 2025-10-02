@@ -21,7 +21,7 @@
 
 ## **1.0 What is Node**
 
-JavaScript (JS) is a pragramming language created to run inside the browser to enhance web applications with responsiveness.
+JavaScript (JS) is a programming language created to run inside the browser to enhance web applications with responsiveness.
 
 Code run in the browser is loaded from the Internet and therefore can't be trusted.
 
@@ -31,7 +31,7 @@ Node.js is an application created to run JS on your machine outside the browser.
 
 This allows JS to be used for many more tasks beyond responsive web applications.
 
-With Node, one can do with JS essentially anything that can be done in other programming languages, subject only to the security protections provided by the operating system.
+With Node, one can with JS do essentially anything that can be done in other programming languages, subject only to the security protections provided by the operating system.
 
 ## **1.1 Asynchronous Programming**
 
@@ -39,13 +39,13 @@ With Node, one can do with JS essentially anything that can be done in other pro
 
 Computer code is merely a sequence of instruction steps.
 
-The sequence of instructions utilized in Node.js is referred to as the call stack.
+The sequence of instructions when run utilizing Node.js is referred to as the call stack.
 
 A stack is a data structure like a stack of pancakes.
 
 Instructions are put on the stack then run from the most recent (top) and down to the bottom of the stack.
 
-This is called First In First Out (FIFO) order.
+This is called Last In First Out (LIFO) order.
 
 Node cannot run multiple instructions simultaneously; however there is a clever work around.
 
@@ -59,7 +59,7 @@ When a pending instruction is ready to be processed it is put in to a queue.
 
 A queue is a data structure just like the waiting line that forms when you go to the bank.
 
-The sequence of a queue is Last In First Out (LIFO).
+The sequence of a queue is First In First Out (FIFO).
 
 In node when the call stack finishes all of it's instructions it then begins processing instructions from the queues in the event loop.
 
@@ -67,9 +67,11 @@ In node when the call stack finishes all of it's instructions it then begins pro
 
 Even though node can only run one instruction at a time the event loop prevents pending operations from blocking the program.
 
-The event loop allows many instructions performed asyncronysouly.
+The event loop allows many instructions performed asynchronously.
 
 This makes the node environment more performant for some things than would be in Python or Ruby.
+
+When the stack of pancakes is finished the queue from the line at the bank starts to move (until a new pancake is added).
 
 Here is a basic video summary of node capabilities: [What is Node.js?](https://youtu.be/uVwtVBpw7RQ)
 
@@ -80,11 +82,11 @@ Node is an application just like other applications you are familiar with.
 
 Photoshop edits photos, browsers browse websites (and run JS), Node.js runs JS.
 
-A difference is that node does not have a graphical user interface.
+A difference with node is that it does not have a graphical user interface.
 
 Therefore to utilize it directly you must use the command line.
 
-At your terminal, type `Node`.  (You should have completed the setup assignment.  If this command doesn't do anything, go back and do the setup.)
+At your terminal, type `Node` and press return.  (You should have completed the setup assignment.  If this command doesn't do anything, go back and do the setup.)
 
 This starts the environment, and you can enter and run JS statements in the terminal.
 
@@ -107,9 +109,9 @@ You will get the value 8 then below it the word undefined.
 
 When you entered "4 + 4" and pressed return you only got 8 (not undefined).
 
-This is because it is an operation that returns the sum.
+This is because 4 + 4 is an operation that returns the sum.
 
-This undefined that occrurs often when running Node in terminal is just a quiky part of the program.
+This undefined that occurs often when running Node in terminal is just a quirky part of the program.
 
 Sometimes the undefined is telling you something important (that a value returns to undefined).
 
@@ -145,7 +147,7 @@ Node.js:
 
 With Node.js you control the environment, not chrome, not firefox, not edge.
 
-For example you deicide which version of node to use and other variables of the environment.
+For example you decide which version of node to use and other variables of the environment.
 
 There are also some small differences in JS syntax when using node as we'll learn.
 
@@ -166,6 +168,22 @@ Find the file path.
 
 ## .exit
 
+## **1.3 Misc**
 
+## General Language Info
+
+A common pattern you will find is that each language has similar components.
+
+Some common components are a run time environment, a package manager, an installer, and code libraries.
+
+Each language tends to have it's own thematic naming convention for these components but they relate to the language basically the same.
+
+As we learned, the preferred Node installer is npm. Libraries of code are referred to as packages. The package manager is usually npm.
+
+There are other package managers that can be used with Node such as yarn and pnpm - we don't use them in this course and it is not critical to know them just that they exist.
+
+And to compare the naming theme of node components to Ruby language Ruby has the RubyGems installer which would be it's equivalent of nvm.
+
+Another example the Rust programming language calls its code libraries crates which would be equivalent to packages in node.
 
 ## Scripting Languages
